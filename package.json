@@ -1,12 +1,31 @@
 {
   "name": "cascade-config",
   "description": "hierarchical config for node.js (env, argv, files, dirs) with inline var substitution",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "keywords": [
+    "configuration",
+    "hierarchy",
+    "mongodb"
+  ],
+  "homepage": "https://github.com/pepmartinez/cascade-config",
+  "bugs": {
+    "url": "https://github.com/pepmartinez/cascade-config/issues",
+    "email": "pep.martinez@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pepmartinez/cascade-config.git"
+  },
+  "author": {
+    "name": "Jose Luis Martinez Juan",
+    "email": "pep.martinez@gmail.com"
+  },
+  "license": "GPL-3.0",
   "dependencies": {
     "lodash": "4.17.10",
     "async": "2.6.1",
     "klaw": "2.1.1",
-    "mongodb": "2.2.28",
+    "mongodb": "3.0.10",
     "pupa": "1.0.0",
     "minimist": "1.2.0"
   },

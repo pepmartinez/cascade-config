@@ -111,7 +111,7 @@ function _from_dir (opts, cfg_so_far, cb) {
     if (item.stats.isFile() && isCfg (item.path)) {
       var pat = item.path
         .substr (file_root_dir.length + 1)
-        .substr (0,item.path.length - (file_root_dir.length + 1) - (path.extname (item.path).length))
+        .substr (0, item.path.length - (file_root_dir.length + 1) - (path.extname (item.path).length))
         .replace (/\./g, '_')
         .replace (/\//g, '.');
 
@@ -146,15 +146,15 @@ function _from_mongodb (opts, cfg_so_far, cb) {
   _.merge (vals, cfg_so_far);
 
   var url =  pupa (opts.url,  vals);
+  var db =   pupa (opts.db,   vals);
   var coll = pupa (opts.coll, vals);
   var id =   pupa (opts.id,   vals);
 
-  MongoClient.connect (url, function(err, db) {
+  MongoClient.connect (url, function(err, client) {
     if (err) return cb (err);
-
-    var collection = db.collection (coll);
+    var collection = client.db (db).collection (coll);
     collection.find ({_id: id}).limit (1).next (function (err, doc) {
-      db.close();
+      client.close();
 
       if (err) {
 //        console.error ('got error reading config from mongo (url %s, coll %s, id %s): ', url, coll, id, e);
