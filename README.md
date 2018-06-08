@@ -57,6 +57,45 @@ cconf
   });
 ```
 
+Variable substitution works also on the loaded objects on each source: what is loaded so far in previous sources is used as source to substitute. Note that the substitution is applied only to the values (not to keys) and only if the value is a string. See an example:
+```javascript
+// ENV is: APP_A=qwerty, APP_B__C__D=66
+// cl is node index.js -a 66 --some.var=option_{B.C.D} --some__other__var=qwerty
+// etc/config.js contains {z: {y: 'one_{some.var}_cc'}}
+cconf
+  .env ({prefix: 'APP_'})
+    // env vars are available to substitute args...
+  .args()
+    // env vars and args are available to substitute file contents...
+  .file (__dirname + '/etc/config.js') 
+  .done (function (err, config) {
+    /*
+    config would be
+    {
+      A: 'qwerty',
+      B: {
+        C: {
+          D: 66
+        }
+      }
+      a: 66,
+      some: {
+        var: 'option_66'
+        other: {
+          var: 'qwerty'
+        }
+      },
+      z: {
+        y: 'one_option_66_cc'
+      }
+    }
+    */
+  });
+```
+Notice `z.y` is built through 2 substitutions: `some.var` is built using `B.C.D`, and then z.y is built usint `some.var`
+
+This works on *all* source types
+
 ## API
 
 * `.obj(object)`: loads and merges an object, verbatim. USeful to provide defaults (if loaded first) or overrides (if loaded last)
