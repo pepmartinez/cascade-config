@@ -167,7 +167,15 @@ describe('cascade-config test', function () {
                 b: "2jrjrtyj"
               }
             }
+          },
+          'templated-getty-deflt': {
+            zzz: 66,
+            zzzz: {
+              a: 1,
+              b: 'it is quite enough',
+            }
           }
+      
         });
 
         done();
@@ -227,6 +235,60 @@ describe('cascade-config test', function () {
         .mongodb({ url: 'mongodb://localhost:27017', db: 'db_{env}_', coll: 'mconf_{env}_', id: 'id-{env}-{gamma.a}'})
         .done(function (err, cfg) {
           cfg.should.eql({ b: 1, cc: { a: 1, b: 2 }, ggg: 3, gamma: {a: 6}});
+          done();
+        });
+    });
+
+    it('process templatized values ok', function (done) {
+      process.env ['APP_sub__x'] = 'ttt';
+      process.env ['APP_sab__y'] = 'ggg';
+
+      process.argv = ['node', 'index.js', '-x', '3', '--b__bb__g=getty', '--a__b__c=967'];
+
+      var mconf = new CC();
+
+      mconf 
+        .env  ({prefix: 'APP_'})
+        .args ()
+        .obj  ({ 
+          b: { 
+            a: 'ideal {sub.x} or not',
+            b: 'surreal {b.bb.g} always or {a.b.c:666}',
+            c: 'be as {b.g.n} on a {b.b.c:666}',
+            d: 'something_{undefined}_fishy' 
+          } 
+        })
+        .obj  ({
+          second_stage: {
+            aaaa: 'guess what: {b.b} all the time',
+            bbbb: 'do [{sab.y}] or [{go_figure:flee}]'
+          } 
+        })
+        .file(__dirname + '/etc/templated-{b.bb.g}-{unknown.non:deflt}.js')
+        .done(function (err, cfg) {
+          cfg.should.eql ({ 
+            sub: { x: 'ttt' },
+            sab: { y: 'ggg' },
+            x: 3,
+            b: { 
+              bb: { g: 'getty' },
+              a: 'ideal ttt or not',
+              b: 'surreal getty always or 967',
+              c: 'be as  on a 666',
+              d: 'something__fishy' 
+            },
+            a: { b: { c: 967 } },
+            second_stage: { 
+              aaaa: 'guess what: surreal getty always or 967 all the time',
+              bbbb: 'do [ggg] or [flee]' 
+            },
+            zzz: 66,
+            zzzz: { 
+              a: 1, 
+              b: 'it is do [ggg] or [flee] enough' 
+            } 
+          });
+          
           done();
         });
     });

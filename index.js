@@ -1,13 +1,14 @@
-var util =      require ('util');
-var klaw =      require ('klaw');
-var _    =      require ('lodash');
-var path =      require ('path');
-var async =     require ('async');
-var pupa =      require ('pupa');
-var parseArgs = require ('minimist');
+var util =         require ('util');
+var klaw =         require ('klaw');
+var _ =            require ('lodash');
+var path =         require ('path');
+var async =        require ('async');
+var parseArgs =    require ('minimist');
+var Interpolator = require ('string-interpolation');
+var traverse =     require ('traverse');
+var MongoClient =  require ('mongodb').MongoClient;
 
-var MongoClient = require('mongodb').MongoClient;
-
+var interpolator = new Interpolator();
 
 function isCfg (item){
   var ext = path.extname (path.basename (item));
@@ -17,14 +18,21 @@ function isCfg (item){
 
 /////////////////////////////////////////////
 // gets data from a plain object
-function _from_obj (obj, cb) {
+function _from_obj (obj, cfg_so_far, cb) {
+  traverse(obj).forEach(function (x) {
+    if (_.isString (x)) {
+      var nx = interpolator.parse (x, cfg_so_far);
+      this.update (nx);
+    }
+  });
+
   cb (null, obj);
 } 
 
 
 /////////////////////////////////////////////
 // gets data from command line arguments
-function _from_args (opts, cb) {
+function _from_args (opts, cfg_so_far, cb) {
   var args = parseArgs (opts.input || (process.argv.slice(2))); 
   var ka = [];
   var va = [];
@@ -37,13 +45,22 @@ function _from_args (opts, cb) {
     va.push (v);
   });
 
-  cb (null, _.zipObjectDeep(ka, va));
+  var obj = _.zipObjectDeep(ka, va);
+
+  traverse(obj).forEach(function (x) {
+    if (_.isString (x)) {
+      var nx = interpolator.parse (x, cfg_so_far);
+      this.update (nx);
+    }
+  });
+
+  cb (null, obj);
 } 
 
 
 /////////////////////////////////////////////
 // gets data from env
-function _from_env (opts, cb) {
+function _from_env (opts, cfg_so_far, cb) {
   var ka = [];
   var va = [];
 
@@ -60,12 +77,21 @@ function _from_env (opts, cb) {
     va.push (v);
   });
 
-  cb (null, _.zipObjectDeep(ka, va));
+  var obj = _.zipObjectDeep(ka, va);
+
+  traverse(obj).forEach(function (x) {
+    if (_.isString (x)) {
+      var nx = interpolator.parse (x, cfg_so_far);
+      this.update (nx);
+    }
+  });
+
+  cb (null, obj);
 }
 
 
 ////////////////////////////////////////////////////////
-// gets data from a file, allows {env} embedded in name
+// gets data from a file
 function _from_file (fname_tmpl, opts, cfg_so_far, cb) {
   var vals = {
     env: process.env.NODE_ENV || 'development'
@@ -73,7 +99,7 @@ function _from_file (fname_tmpl, opts, cfg_so_far, cb) {
 
   _.merge (vals, cfg_so_far);
   
-  var fname = pupa (fname_tmpl, vals);
+  var fname = interpolator.parse (fname_tmpl, vals);
   var obj = {};
 
   try {
@@ -88,6 +114,14 @@ function _from_file (fname_tmpl, opts, cfg_so_far, cb) {
     }
   }
 
+  // expand variables in loaded object
+  traverse(obj).forEach(function (x) {
+    if (_.isString (x)) {
+      var nx = interpolator.parse (x, vals);
+      this.update (nx);
+    }
+  });
+  
   return cb (null, obj);
 } 
 
@@ -104,7 +138,7 @@ function _from_dir (opts, cfg_so_far, cb) {
 
   _.merge (vals, cfg_so_far);
   
-  var file_root_dir = pupa (file_root_dir_tmpl, vals);
+  var file_root_dir = interpolator.parse (file_root_dir_tmpl, vals);
 
   klaw (file_root_dir, {})
   .on('data', function(item){
@@ -123,6 +157,15 @@ function _from_dir (opts, cfg_so_far, cb) {
   .on ('error', function (err) {
     if ((err.code === 'ENOENT') && (err.path === file_root_dir)) {
       // ignore
+
+      // expand variables in loaded object
+      traverse(cfg).forEach(function (x) {
+        if (_.isString (x)) {
+          var nx = interpolator.parse (x, vals);
+          this.update (nx);
+        }
+      });
+
       return cb (null, cfg);
     }
     else {
@@ -131,6 +174,14 @@ function _from_dir (opts, cfg_so_far, cb) {
     }
   })
   .on('end', function () {
+    // expand variables in loaded object
+    traverse(cfg).forEach(function (x) {
+      if (_.isString (x)) {
+        var nx = interpolator.parse (x, vals);
+        this.update (nx);
+      }
+    });
+
     return cb (null, cfg);
   });
 }
@@ -145,10 +196,10 @@ function _from_mongodb (opts, cfg_so_far, cb) {
 
   _.merge (vals, cfg_so_far);
 
-  var url =  pupa (opts.url,  vals);
-  var db =   pupa (opts.db,   vals);
-  var coll = pupa (opts.coll, vals);
-  var id =   pupa (opts.id,   vals);
+  var url =  interpolator.parse (opts.url,  vals);
+  var db =   interpolator.parse (opts.db,   vals);
+  var coll = interpolator.parse (opts.coll, vals);
+  var id =   interpolator.parse (opts.id,   vals);
 
   MongoClient.connect (url, function(err, client) {
     if (err) return cb (err);
@@ -157,11 +208,19 @@ function _from_mongodb (opts, cfg_so_far, cb) {
       client.close();
 
       if (err) {
-//        console.error ('got error reading config from mongo (url %s, coll %s, id %s): ', url, coll, id, e);
         return cb (err);
       }
       else {
         if (doc) delete doc._id;
+
+        // expand variables in loaded object
+        traverse(doc).forEach(function (x) {
+          if (_.isString (x)) {
+            var nx = interpolator.parse (x, vals);
+            this.update (nx);
+          }
+        });
+
         return cb (null, doc);
       }
     });
@@ -187,7 +246,7 @@ CascadeConfig.prototype.obj = function (oo) {
   var self = this;
 
   this._tasks.push (function (cb) {
-    _from_obj (oo, function (err, res) {
+    _from_obj (oo, self._cfg, function (err, res) {
       if (err) return cb (err);
       self._merge (res);
       return cb ();
@@ -203,7 +262,7 @@ CascadeConfig.prototype.args = function (opts) {
   var self = this;
 
   this._tasks.push (function (cb) {
-    _from_args (opts || {}, function (err, res) {
+    _from_args (opts || {}, self._cfg, function (err, res) {
       if (err) return cb (err);
       self._merge (res);
       return cb ();
@@ -219,7 +278,7 @@ CascadeConfig.prototype.env = function (opts) {
   var self = this;
 
   this._tasks.push (function (cb) {
-    _from_env (opts || {}, function (err, res) {
+    _from_env (opts || {}, self._cfg, function (err, res) {
       if (err) return cb (err);
       self._merge (res);
       return cb ();

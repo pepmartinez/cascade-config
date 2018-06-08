@@ -26,8 +26,9 @@
     "async": "2.6.1",
     "klaw": "2.1.1",
     "mongodb": "3.0.10",
-    "pupa": "1.0.0",
-    "minimist": "1.2.0"
+    "string-interpolation": "1.2.2",
+    "minimist": "1.2.0",
+    "traverse": "0.6.6"
   },
   "devDependencies": {
     "mocha": "5.2.0",

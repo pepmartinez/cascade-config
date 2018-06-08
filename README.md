@@ -44,6 +44,7 @@ cconf
     // config will contain what's in ./resources-one.js
   });
 ```
+Variable substitution is made with [string-interpolation](https://www.npmjs.com/package/string-interpolation) so you can use any modifier allowed by it (defaults, transformations...)
 
 Also, variable 'env' is always available, containing `NODE_ENV`. This makes it very simple to load configuration depending on the environment (production, development...):
 ```javascript
