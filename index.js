@@ -2,6 +2,7 @@ var util =         require ('util');
 var klaw =         require ('klaw');
 var _ =            require ('lodash');
 var path =         require ('path');
+var fs =           require ('fs');
 var async =        require ('async');
 var parseArgs =    require ('minimist');
 var Interpolator = require ('string-interpolation');
@@ -15,18 +16,25 @@ function isCfg (item){
   return ext === '.js' || ext === '.json';
 }
 
-
+ 
 /////////////////////////////////////////////
-// gets data from a plain object
-function _from_obj (obj, cfg_so_far, cb) {
+// does object substitution
+function _expand (obj, cfg_so_far, cb) {
   traverse(obj).forEach(function (x) {
     if (_.isString (x)) {
       var nx = interpolator.parse (x, cfg_so_far);
       this.update (nx);
     }
   });
-
+  
   cb (null, obj);
+}
+
+
+/////////////////////////////////////////////
+// gets data from a plain object
+function _from_obj (obj, cfg_so_far, cb) {
+  _expand (obj, cfg_so_far, cb);
 } 
 
 
@@ -46,15 +54,7 @@ function _from_args (opts, cfg_so_far, cb) {
   });
 
   var obj = _.zipObjectDeep(ka, va);
-
-  traverse(obj).forEach(function (x) {
-    if (_.isString (x)) {
-      var nx = interpolator.parse (x, cfg_so_far);
-      this.update (nx);
-    }
-  });
-
-  cb (null, obj);
+  _expand (obj, cfg_so_far, cb);
 } 
 
 
@@ -78,15 +78,7 @@ function _from_env (opts, cfg_so_far, cb) {
   });
 
   var obj = _.zipObjectDeep(ka, va);
-
-  traverse(obj).forEach(function (x) {
-    if (_.isString (x)) {
-      var nx = interpolator.parse (x, cfg_so_far);
-      this.update (nx);
-    }
-  });
-
-  cb (null, obj);
+  _expand (obj, cfg_so_far, cb);
 }
 
 
@@ -100,29 +92,30 @@ function _from_file (fname_tmpl, opts, cfg_so_far, cb) {
   _.merge (vals, cfg_so_far);
   
   var fname = interpolator.parse (fname_tmpl, vals);
-  var obj = {};
 
-  try {
-    obj = require (fname);
-  } 
-  catch (e) {
-    if (opts.ignore_missing) {
-      return cb (null, {});
+  // check existence
+  fs.access (fname, function (err) {
+    if (err) {
+      if (opts.ignore_missing) {
+        return cb (null, {});
+      }
+      else {
+        return cb (err);
+      }
     }
-    else {
+
+    var obj = {};
+  
+    try {
+      obj = require (fname);
+    } 
+    catch (e) {
       return cb (e);
     }
-  }
 
-  // expand variables in loaded object
-  traverse(obj).forEach(function (x) {
-    if (_.isString (x)) {
-      var nx = interpolator.parse (x, vals);
-      this.update (nx);
-    }
+    // expand variables in loaded object
+    _expand (obj, vals, cb);
   });
-  
-  return cb (null, obj);
 } 
 
 
@@ -159,14 +152,7 @@ function _from_dir (opts, cfg_so_far, cb) {
       // ignore
 
       // expand variables in loaded object
-      traverse(cfg).forEach(function (x) {
-        if (_.isString (x)) {
-          var nx = interpolator.parse (x, vals);
-          this.update (nx);
-        }
-      });
-
-      return cb (null, cfg);
+      _expand (cfg, vals, cb);
     }
     else {
       console.error ('got error reading recursive config from %s: ', file_root_dir, err);
@@ -175,14 +161,7 @@ function _from_dir (opts, cfg_so_far, cb) {
   })
   .on('end', function () {
     // expand variables in loaded object
-    traverse(cfg).forEach(function (x) {
-      if (_.isString (x)) {
-        var nx = interpolator.parse (x, vals);
-        this.update (nx);
-      }
-    });
-
-    return cb (null, cfg);
+    _expand (cfg, vals, cb);
   });
 }
 
@@ -214,14 +193,7 @@ function _from_mongodb (opts, cfg_so_far, cb) {
         if (doc) delete doc._id;
 
         // expand variables in loaded object
-        traverse(doc).forEach(function (x) {
-          if (_.isString (x)) {
-            var nx = interpolator.parse (x, vals);
-            this.update (nx);
-          }
-        });
-
-        return cb (null, doc);
+        _expand (doc, vals, cb);
       }
     });
   });

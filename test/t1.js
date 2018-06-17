@@ -64,9 +64,9 @@ describe('cascade-config test', function () {
 
       mconf
         .obj  ({ a: 'b', b: { c: 1, d: 4 } })
-        .file (__dirname + '/etc/d1/f1.js')
+        .file (__dirname + '/etc/tree/d1/f1.js')
         .obj  ({ nnn: '666', b: { jj: 66 } })
-        .file (__dirname + '/etc/d2/f1.js')
+        .file (__dirname + '/etc/tree/d2/f1.js')
         .env  ({prefix: 'elmer.'})
         .args ()
         .obj  ({ b: { d: 'qwerty' } })
@@ -85,12 +85,33 @@ describe('cascade-config test', function () {
         })
     });
 
-    it('does return empty object on nonexistent file', function (done) {
+    it('does return empty object on nonexistent file (ignore_missing: true)', function (done) {
       var mconf = new CC();
 
       mconf.file('nonexistent.js', {ignore_missing: true})
         .done(function (err, cfg) {
           cfg.should.eql({});
+          done();
+        })
+    });
+
+    it('does return error on nonexistent file', function (done) {
+      var mconf = new CC();
+
+      mconf.file('nonexistent.js')
+        .done(function (err, cfg) {
+          err.code.should.equal ('ENOENT');
+          done();
+        })
+    });
+
+    it('does return error on malformed file', function (done) {
+      var mconf = new CC();
+
+      mconf.file(__dirname + '/etc/malformed.js', {ignore_missing: true})
+        .done(function (err, cfg) {
+          should (err).not.be.undefined();
+          should (cfg).be.undefined();
           done();
         })
     });
@@ -122,25 +143,9 @@ describe('cascade-config test', function () {
     it('does read and merge entire dir ok', function (done) {
       var mconf = new CC();
 
-      mconf.directory({ files: __dirname + '/etc' }).done(function (err, cfg) {
+      mconf.directory({ files: __dirname + '/etc/tree' }).done(function (err, cfg) {
         if (err) return done(err);
-        cfg.should.eql({
-          development: {                                                                                                    
-            'f-development': {                                                                                                
-              t1: 66,                                                                                                        
-              tt: {                                                                                                         
-                a: 1,                                                                                                        
-                b: '2'                                                                                                      
-              }                                                                                                               
-            }                                                                                                                 
-          },  
-          f1: {
-            t1: 66,
-            tt: {
-              a: 1,
-              b: "2"
-            }
-          },
+        cfg.should.eql({ 
           d1: {
             f1: {
               t1: 667,
@@ -168,14 +173,6 @@ describe('cascade-config test', function () {
               }
             }
           },
-          'templated-getty-deflt': {
-            zzz: 66,
-            zzzz: {
-              a: 1,
-              b: 'it is quite enough',
-            }
-          }
-      
         });
 
         done();

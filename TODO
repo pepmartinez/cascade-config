@@ -1,2 +1,2 @@
-* use shortstop for file/buffer load
+* use shortstop-like resolver for file/buffer load
 * add mount-path option
