@@ -264,25 +264,6 @@ describe('cascade-config test', function () {
         });
     });
 
-    it('converts types after expansion ok hhhhhhhhhhhhhh', function (done) {
-      var cconf = new CC();
-    cconf
-    .obj ({a: 1, b: '2', c: 'true', d: 'SmF2YVNjcmlwdA==', e: 67.89, f:'123.456'})
-    .obj ({
-      p1: '#int:{a}', 
-      p2: '#int:{b}',
-      p3: '#int:{c}',
-      p4: '#bool:{c}',
-      p5: '#base64:{d}',
-      p6: '#float:{e}',
-      p7: '#float:{f}'
-    })
-    .done (function (err, config) {
-      console.dir (config)
-      done();
-    });
-  });
-
 
     it('process templatized values ok', function (done) {
       process.env ['APP_sub__x'] = 'ttt';
