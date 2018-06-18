@@ -1,7 +1,7 @@
 {
   "name": "cascade-config",
   "description": "hierarchical config for node.js (env, argv, files, dirs) with inline var substitution",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "keywords": [
     "configuration",
     "hierarchy",

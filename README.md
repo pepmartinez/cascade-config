@@ -1,5 +1,5 @@
 # cascade-config
-Asynchronous hierarchical config for node.js (env, argv, files, dirs) with inline var substitution
+Asynchronous hierarchical config for node.js (env, argv, files, dirs) with inline var substitution and type conversion
 
 ## Quick Start
 `cascade-config` works by loading config objects from different sources and merging them together. 6 types of sources are provided:
@@ -95,6 +95,49 @@ cconf
 Notice `z.y` is built through 2 substitutions: `some.var` is built using `B.C.D`, and then z.y is built usint `some.var`
 
 This works on *all* source types
+
+## Type conversion
+Since variable substitution works only for string values, it is useful to have some sort of type conversion mechanism to convert string values into other types. cascade-config does this by looking whether the string begins with a specific prefix:
+* `'#int:'`  converts the rest of the string into an int (using `parseInt`)
+* `'#float:'`  converts the rest of the string into a float (using `parseFloat`)
+* `'#bool:'`  converts the rest of the string into a boolean (as in `value === 'true'`)
+* `'#base64:'` converts the rest of the string into a `Buffer` by base64-decoding it
+
+let see an example:
+```javascript
+
+cconf
+  .obj ({a: 1, b: '2', c: 'true', d: 'SmF2YVNjcmlwdA==', e: 67.89, f:'123.456'})
+  .obj ({
+    p1: '#int:{a}', 
+    p2: '#int:{b}',
+    p3: '#int:{c}',
+    p4: '#bool:{c}',
+    p5: '#base64:{d}',
+    p6: '#float:{e}',
+    p7: '#float:{f}'
+  })
+  .done (function (err, config) {
+    /*
+    config would be
+    { 
+      a: 1,
+      b: '2',
+      c: 'true',
+      d: 'SmF2YVNjcmlwdA==',
+      e: 67.89,
+      f: '123.456',
+      p1: 1,
+      p2: 2,
+      p3: NaN,
+      p4: true,
+      p5: Buffer [ 74, 97, 118, 97, 83, 99, 114, 105, 112, 116 ],
+      p6: 67.89,
+      p7: 123.456 
+    }
+    */
+  });
+```
 
 ## API
 

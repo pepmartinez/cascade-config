@@ -17,13 +17,34 @@ function isCfg (item){
 }
 
  
+var _type_convs = {
+  '#int': parseInt,
+  '#float': parseFloat,
+  '#bool': function (s) {return s === 'true';},
+  '#base64': function (s) {return new Buffer(s, 'base64');}
+};
+
+function _type_conversion (str) {
+  var idx = str.indexOf (':');
+
+  if (idx == -1) return str;
+  
+  var sel = str.substr(0, idx);
+  var val = str.substr(idx + 1);
+  var conv = _type_convs[sel];
+  if (!conv) return str;
+  return conv(val);
+}
+
+
+
 /////////////////////////////////////////////
 // does object substitution
 function _expand (obj, cfg_so_far, cb) {
   traverse(obj).forEach(function (x) {
     if (_.isString (x)) {
-      var nx = interpolator.parse (x, cfg_so_far);
-      this.update (nx);
+      var nx = _type_conversion (interpolator.parse (x, cfg_so_far));
+      if (nx != x) this.update (nx);
     }
   });
   
