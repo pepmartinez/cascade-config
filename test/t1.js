@@ -69,6 +69,7 @@ describe('cascade-config test', function () {
         .file (__dirname + '/etc/tree/d2/f1.js')
         .env  ({prefix: 'elmer.'})
         .args ()
+        .args ({prefix: 'b.bb.'})
         .obj  ({ b: { d: 'qwerty' } })
         .done(function (err, cfg) {
           cfg.should.eql({
@@ -78,7 +79,8 @@ describe('cascade-config test', function () {
             tt: { a: 1345, b: '244' },
             nnn: '666',
             x: 3,
-            zzz: [{cc: 'ttt'}, {cc: 'ggg'}, {v: 967}]
+            zzz: [{cc: 'ttt'}, {cc: 'ggg'}, {v: 967}],
+            g: 'getty'
           });
 
           done();

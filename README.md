@@ -186,8 +186,23 @@ In all cases, one can produce deep objects (ie subobjects) by adding `__` to the
     }
     */
   });
+
+  cconf.args({prefix: 'some.'}).done (function (err, config) {
+    /*
+    config would be
+    {
+      var: 'rt',
+      other: {
+        var: 'qwerty'
+      }
+    }
+    */
+  });
   ```
-  A single option `input` is allowed: a string that would be used as source for minimist instead of `process.argv.slice(2)`
+  Allowed options are:
+  * `input`: a string that would be used as source for minimist instead of `process.argv.slice(2)`
+  * `prefix: str`: selects all vars with name starting with `str`, and removes the prefix before adding it to the object
+  * `regexp: regex`: selects all vars whose name matches `regex`
 
 * `.file(filename, opts)`: loads object from a file. `filename` supports variable substitution. Options are:
   * `ignore_missing`: if truish, jus return an empty object if the file can not be read; if false, raise an error. Defaults to false

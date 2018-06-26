@@ -68,9 +68,16 @@ function _from_args (opts, cfg_so_far, cb) {
 
   _.forEach (args, function (v, k) {
     if (k == '_') return;
-    
+
     // change __ into . in k
-    ka.push (k.replace (/__/g, '.'));
+    k = k.replace (/__/g, '.');
+
+    if (opts.regexp && !(k.match (opts.regexp))) return;
+    if (opts.prefix && !(_.startsWith (k, opts.prefix))) return;
+
+    if (opts.prefix) k = k.substr (opts.prefix.length);
+
+    ka.push (k);
     va.push (v);
   });
 
