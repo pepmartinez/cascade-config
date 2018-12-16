@@ -340,7 +340,10 @@ CascadeConfig.prototype.mongodb = function (opts) {
 //////////////////////////////////////////////
 CascadeConfig.prototype._resolve = function (cb) {
   var self = this;
-  this._cfg = {};
+
+  Object.keys(this._cfg).forEach(function(key) {
+    delete self._cfg[key]; 
+  });
 
   async.series (this._tasks, function (err) {
     if (err) return cb (err);

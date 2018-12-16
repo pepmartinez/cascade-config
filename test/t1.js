@@ -394,6 +394,7 @@ describe('cascade-config test', function () {
           });
         }, {extended: true});
     });
+
   });
 });
 
