@@ -1,5 +1,6 @@
 var CC = require('../');
 var async = require('async');
+var _ = require ('lodash');
 var should = require('should');
 
 var MongoClient = require('mongodb').MongoClient;
@@ -266,7 +267,6 @@ describe('cascade-config test', function () {
         });
     });
 
-
     it('process templatized values ok', function (done) {
       process.env ['APP_sub__x'] = 'ttt';
       process.env ['APP_sab__y'] = 'ggg';
@@ -319,6 +319,80 @@ describe('cascade-config test', function () {
           
           done();
         });
+    });
+  });
+
+  describe('extended', function () {
+    it('loads ok', function (done) {
+      var mconf = new CC();
+
+      mconf
+        .obj({ a: 'b', b: { c: 1, d: 4 } })
+        .file(__dirname + '/etc/{env}/f-{env}.js')
+        .done(function (err, cfg) {
+          cfg.config ().should.eql({
+            a: 'b', b: { c: 1, d: 4 }, t1: 66, tt: { a: 1, b: '2' }
+          });
+
+          cfg.get ('t1').should.eql (66);
+          cfg.get ('tt.b').should.eql ('2');
+          cfg.get ('b').should.eql ({ c: 1, d: 4 });
+
+          done();
+        }, {extended: true});
+    });
+
+
+    it('changes ok', function (done) {
+      var mconf = new CC();
+
+      mconf
+        .obj({ a: 'b', b: { c: 1, d: 4 } })
+        .file(__dirname + '/etc/{env}/f-{env}.js')
+        .done(function (err, cfg) {
+          var track = [];
+          cfg.onChange (function (path) {track.push (path); track.push(_.cloneDeep (cfg.config ()));});
+
+          async.series ([
+            function (cb) {cb (null, cfg.unset ('b.e'))},
+            function (cb) {cb (null, _.cloneDeep (cfg.config ()))},
+            function (cb) {cb (null, cfg.unset ('b.c'))},
+            function (cb) {cb (null, _.cloneDeep (cfg.config ()))},
+            function (cb) {cfg.set ('b.c', 'yyy'); cb ()},
+            function (cb) {cfg.set ('b.e', 'hhh'); cb ()},
+            function (cb) {cb (null, _.cloneDeep (cfg.config ()))},
+            function (cb) {cfg.reload (function (err) {cb (err)})},
+            function (cb) {cb (null, _.cloneDeep (cfg.config ()))},
+          ],
+          function (err, res) {
+            res.should.eql ([ 
+              true,
+              { a: 'b', b: { c: 1, d: 4 }, t1: 66, tt: { a: 1, b: '2' } },
+              true,
+              { a: 'b', b: { d: 4 }, t1: 66, tt: { a: 1, b: '2' } },
+              undefined,
+              undefined,
+              { a: 'b',  b: { d: 4, c: 'yyy', e: 'hhh' }, t1: 66, tt: { a: 1, b: '2' } },
+              undefined,
+              { a: 'b', b: { c: 1, d: 4 }, t1: 66, tt: { a: 1, b: '2' } } ]
+            );
+
+            track.should.eql ([ 
+              'b.e',
+  { a: 'b', b: { c: 1, d: 4 }, t1: 66, tt: { a: 1, b: '2' } },
+  'b.c',
+  { a: 'b', b: { d: 4 }, t1: 66, tt: { a: 1, b: '2' } },
+  'b.c',
+  { a: 'b', b: { d: 4, c: 'yyy' }, t1: 66, tt: { a: 1, b: '2' } },
+  'b.e',
+  { a: 'b', b: { d: 4, c: 'yyy', e: 'hhh' }, t1: 66, tt: { a: 1, b: '2' } },
+  undefined,
+  { a: 'b', b: { c: 1, d: 4 }, t1: 66, tt: { a: 1, b: '2' } } ]
+);
+
+            done();
+          });
+        }, {extended: true});
     });
   });
 });

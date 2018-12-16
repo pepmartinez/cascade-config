@@ -338,13 +338,75 @@ CascadeConfig.prototype.mongodb = function (opts) {
 
 
 //////////////////////////////////////////////
-CascadeConfig.prototype.done = function (cb) {
+CascadeConfig.prototype._resolve = function (cb) {
   var self = this;
+  this._cfg = {};
 
   async.series (this._tasks, function (err) {
     if (err) return cb (err);
     return cb (null, self._cfg);
   })
+}
+
+
+
+var Config = function (cc) {
+  this._cc = cc;
+  this._change_listeners = [];
+}
+
+
+Config.prototype.config = function () {
+  return this._cc._cfg;
+}
+
+Config.prototype.get = function (k, dflt) {
+  return _.get (this._cc._cfg, k, dflt);
+}
+
+Config.prototype.set = function (k, v) {
+  var ret = _.set (this._cc._cfg, k, v);
+  this._change (k);
+  return ret;
+}
+
+Config.prototype.unset = function (k) {
+  var ret = _.unset (this._cc._cfg, k);
+  if (ret) this._change (k);
+  return ret;
+}
+
+Config.prototype.reload = function (cb) {
+  var self = this; 
+  this._cc._resolve (function (err, cfg) {
+    if (err) return cb (err);
+    self._change ();
+    cb (null, self);
+  });
+}
+
+Config.prototype.onChange = function (cb, opts) {
+  this._change_listeners.push (cb);
+}
+
+Config.prototype._change = function (path) {
+  _.forEach (this._change_listeners, function (l) {
+    l (path);
+  });
+}
+
+
+//////////////////////////////////////////////
+CascadeConfig.prototype.done = function (cb, opts) {
+  if (!opts) opts = {};
+
+  if (opts.extended) {
+    var c = new Config (this);
+    c.reload (cb);
+  }
+  else {
+    this._resolve (cb);
+  }
 }
 
 
