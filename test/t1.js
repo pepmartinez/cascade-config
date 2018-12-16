@@ -258,7 +258,7 @@ describe('cascade-config test', function () {
               f: NaN,
               g: 'something:ggg:hhh',
               h: NaN,
-              i: new Buffer('JavaScript')
+              i: Buffer.from('JavaScript')
             } 
           });
           

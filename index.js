@@ -21,7 +21,7 @@ var _type_convs = {
   '#int': parseInt,
   '#float': parseFloat,
   '#bool': function (s) {return s === 'true';},
-  '#base64': function (s) {return new Buffer(s, 'base64');}
+  '#base64': function (s) {return Buffer.from(s, 'base64');}
 };
 
 function _type_conversion (str) {
