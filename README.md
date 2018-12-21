@@ -205,7 +205,7 @@ In all cases, one can produce deep objects (ie subobjects) by adding `__` to the
   * `regexp: regex`: selects all vars whose name matches `regex`
 
 * `.file(filename, opts)`: loads object from a file. `filename` supports variable substitution. Options are:
-  * `ignore_missing`: if truish, jus return an empty object if the file can not be read; if false, raise an error. Defaults to false
+  * `ignore_missing`: if truish, just return an empty object if the file can not be read; if false, raise an error. Defaults to false
 * `.directory(opts)`: loads a single object composed by an entire file hierarchy. Only js and json files are considered, and the resulting object reflects the relative path of the file. That is, a file `a/b/c.js` containing `{n:1, b:6}` would produce `{a: {b: {c: {n: 1, b: 6}}}}`. Also, dots in file or dir names are changed into `_`. Options are:
   * `files`: base dir to read files from. defaults to `__dirname + '/etc'`, and supports variable substitution
 * `.mongodb (opts)`: reads an object from a mongodb database, specified by mongodb url, database, collection and _id value. All 4 support variable substitution. Options are:
@@ -213,3 +213,30 @@ In all cases, one can produce deep objects (ie subobjects) by adding `__` to the
   * `db`: database to use
   * `coll`: collection to use
   * `id`: value of `_id` to seek within the collection. The `_id` itself is deleted from the returned object  
+
+## Extended API
+The api exposed so far provides a simple, plain JS object with all the config; this is usually more than enough, but for more complex use cases -where advanced config management is needed- a more powerful interface is provided
+
+This extender interface is selected by simply passing `{extended: true}` as second param of `.done()`:
+
+```javascript
+  cconf
+    .args({prefix: 'some.'})
+    ...
+    .done (function (err, config) {
+     ...
+    }, {extended: true}
+  );
+```
+
+In this case `config` is no longer a plain object containing the config, but an interface to it with the following methods:
+
+* `config()`: returns the plain config object (as in the standard interface)
+* `get()`: gets a value or slice from the config. Uses the same interface, and has the same logic than lodash's `_.get(obj, ...)`
+* `set()`: sets a value or slice in the config. Uses the same interface, and has the same logic than lodash's `_.set(obj, ...)`
+* `unset()`: unsets a value or slice in the config. Uses the same interface, and has the same logic than lodash's `_.unset(obj, ...)`
+* `reload (cb)`: rereads all config again, as if you called `done()`. It has, in fact, the same interface 
+* `onChange(fn)`: registers a function to be called every the the config is changed (by calling `set()`, `unset()` or `reload()`). Teh function will be called every time the config is changed, with the following params:
+  * `function (path)`: where `path` is the path of the change within the configuration, or null if unknown or affects all the config
+
+__*Note*__: the object returned by `config()` is mutable, but the object reference itself does not change: if you save it for later, you can read the new config in it after any change, `reload()` included, as expected
