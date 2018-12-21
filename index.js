@@ -1,4 +1,3 @@
-var util =         require ('util');
 var klaw =         require ('klaw');
 var _ =            require ('lodash');
 var path =         require ('path');
@@ -7,7 +6,6 @@ var async =        require ('async');
 var parseArgs =    require ('minimist');
 var Interpolator = require ('string-interpolation');
 var traverse =     require ('traverse');
-var MongoClient =  require ('mongodb').MongoClient;
 
 var interpolator = new Interpolator();
 
@@ -195,40 +193,6 @@ function _from_dir (opts, cfg_so_far, cb) {
 
 
 //////////////////////////////////////////////
-// gets data from mongodb. Both url, coll and id are templated
-function _from_mongodb (opts, cfg_so_far, cb) {
-  var vals = {
-    env: process.env.NODE_ENV || 'development'
-  };
-
-  _.merge (vals, cfg_so_far);
-
-  var url =  interpolator.parse (opts.url,  vals);
-  var db =   interpolator.parse (opts.db,   vals);
-  var coll = interpolator.parse (opts.coll, vals);
-  var id =   interpolator.parse (opts.id,   vals);
-
-  MongoClient.connect (url, function(err, client) {
-    if (err) return cb (err);
-    var collection = client.db (db).collection (coll);
-    collection.find ({_id: id}).limit (1).next (function (err, doc) {
-      client.close();
-
-      if (err) {
-        return cb (err);
-      }
-      else {
-        if (doc) delete doc._id;
-
-        // expand variables in loaded object
-        _expand (doc, vals, cb);
-      }
-    });
-  });
-}
-
-
-//////////////////////////////////////////////
 var CascadeConfig = function () {
   this._tasks = [];
   this._cfg = {};
@@ -322,22 +286,6 @@ CascadeConfig.prototype.directory = function (opts) {
 
 
 //////////////////////////////////////////////
-CascadeConfig.prototype.mongodb = function (opts) {
-  var self = this;
-
-  this._tasks.push (function (cb) {
-    _from_mongodb (opts, self._cfg, function (err, res) {
-      if (err) return cb (err);
-      self._merge (res);
-      return cb ();
-    });
-  });
-
-  return this;
-}
-
-
-//////////////////////////////////////////////
 CascadeConfig.prototype._resolve = function (cb) {
   var self = this;
 
@@ -414,4 +362,8 @@ CascadeConfig.prototype.done = function (cb, opts) {
 
 
 //////////////////////////////////////////////
+// ass static-like utils
+CascadeConfig.prototype._expand =       _expand;
+CascadeConfig.prototype._interpolator = interpolator;
+
 module.exports = CascadeConfig;

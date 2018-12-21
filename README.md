@@ -2,14 +2,15 @@
 Asynchronous hierarchical config for node.js (env, argv, files, dirs) with inline var substitution and type conversion
 
 ## Quick Start
-`cascade-config` works by loading config objects from different sources and merging them together. 6 types of sources are provided:
+`cascade-config` works by loading config objects from different sources and merging them together. 5 types of sources are provided:
 
 * file: object is loaded using `require`
 * directory: a full hierarchy of files are loaded, reflecting the hierarchy in the loaded object
 * env: object is composed from env vars
 * obj: object is explicitly specified
 * args: object is composed from command line args
-* mongodb: object is read from mongodb
+
+External loaders also exist as separated packages (see below)
 
 The objects are loaded in the order their methods are called, so latter calls take precedence (an object loaded later would overwrite what is already loaded, by merge)
 
@@ -34,7 +35,7 @@ cconf
 ```
 
 ## Variable substitution
-CC supports using variables already read when calling certain loaders (file and mongodb). A very useful example is to use already-loaded config to specify the path of a file to load:
+CC supports using variables already read when calling certain loaders (file and directory). A very useful example is to use already-loaded config to specify the path of a file to load:
 
 ```javascript
 cconf
@@ -208,11 +209,6 @@ In all cases, one can produce deep objects (ie subobjects) by adding `__` to the
   * `ignore_missing`: if truish, just return an empty object if the file can not be read; if false, raise an error. Defaults to false
 * `.directory(opts)`: loads a single object composed by an entire file hierarchy. Only js and json files are considered, and the resulting object reflects the relative path of the file. That is, a file `a/b/c.js` containing `{n:1, b:6}` would produce `{a: {b: {c: {n: 1, b: 6}}}}`. Also, dots in file or dir names are changed into `_`. Options are:
   * `files`: base dir to read files from. defaults to `__dirname + '/etc'`, and supports variable substitution
-* `.mongodb (opts)`: reads an object from a mongodb database, specified by mongodb url, database, collection and _id value. All 4 support variable substitution. Options are:
-  * `url`: mongodb url (as supported by mongodb driver v3)
-  * `db`: database to use
-  * `coll`: collection to use
-  * `id`: value of `_id` to seek within the collection. The `_id` itself is deleted from the returned object  
 
 ## Extended API
 The api exposed so far provides a simple, plain JS object with all the config; this is usually more than enough, but for more complex use cases -where advanced config management is needed- a more powerful interface is provided
@@ -240,3 +236,7 @@ In this case `config` is no longer a plain object containing the config, but an 
   * `function (path)`: where `path` is the path of the change within the configuration, or null if unknown or affects all the config
 
 __*Note*__: the object returned by `config()` is mutable, but the object reference itself does not change: if you save it for later, you can read the new config in it after any change, `reload()` included, as expected
+
+## External loaders
+There are external packages that add loaders to `cascade-config`, thus allowing to read config from other type of sources:
+* [cascade-config-mongodb](https://www.npmjs.com/package/cascade-config-mongodb) cascade-config-mongodb: reads config from mongodb databases
