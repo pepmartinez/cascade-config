@@ -20,7 +20,7 @@ describe('cascade-config test', function () {
         })
     });
 
-    it('does read and merge objects, args, env and files ok', function (done) {
+    it('does read and merge objects, args, env, files and envfiles ok', function (done) {
       var mconf = new CC();
       
       process.env ['elmer.zzz[0].cc'] = 'ttt';
@@ -33,6 +33,7 @@ describe('cascade-config test', function () {
         .file (__dirname + '/etc/tree/d1/f1.js')
         .obj  ({ nnn: '666', b: { jj: 66 } })
         .file (__dirname + '/etc/tree/d2/f1.js')
+        .envfile (__dirname + '/env/e1')
         .env  ({prefix: 'elmer.'})
         .args ()
         .args ({prefix: 'b.bb.'})
@@ -40,13 +41,17 @@ describe('cascade-config test', function () {
         .done(function (err, cfg) {
           cfg.should.eql({
             a: 'b',
-            b: { bb: {g: 'getty'}, c: 1, d: 'qwerty', jj: 66 },
+            b: { bb: {g: 'getty'}, c: 1, d: 'qwerty', jj: 66, g_h: 'qwertyuiop'},
             t1: 6635,
             tt: { a: 1345, b: '244' },
             nnn: '666',
             x: 3,
             zzz: [{cc: 'ttt'}, {cc: 'ggg'}, {v: 967}],
-            g: 'getty'
+            g: 'getty',
+            ABCD: '666',
+            G: 'g',
+            H: '66',
+          
           });
 
           done();
@@ -60,7 +65,17 @@ describe('cascade-config test', function () {
         .done(function (err, cfg) {
           cfg.should.eql({});
           done();
-        })
+        });
+    });
+
+    it('does return empty object on nonexistent envfile if ignore_missing is true', function (done) {
+      var mconf = new CC();
+
+      mconf.envfile('nonexistent', {ignore_missing: true})
+        .done(function (err, cfg) {
+          cfg.should.eql({});
+          done();
+        });
     });
 
     it('does return error on nonexistent file', function (done) {
@@ -70,7 +85,17 @@ describe('cascade-config test', function () {
         .done(function (err, cfg) {
           err.code.should.equal ('ENOENT');
           done();
-        })
+        });
+    });
+
+    it('does return error on nonexistent envfile', function (done) {
+      var mconf = new CC();
+
+      mconf.envfile('nonexistent')
+        .done(function (err, cfg) {
+          err.code.should.equal ('ENOENT');
+          done();
+        });
     });
 
     it('does return error on malformed file', function (done) {
@@ -131,9 +156,17 @@ describe('cascade-config test', function () {
       mconf
         .obj({ a: 'b', b: { c: 1, d: 4 } })
         .file(__dirname + '/etc/{env}/f-{env}.js')
+        .envfile (__dirname + '/env/e2')
         .done(function (err, cfg) {
           cfg.should.eql({
-           a: 'b', b: { c: 1, d: 4 }, t1: 66, tt: { a: 1, b: '2' }
+           a: 'b', 
+           b: { c: 1, d: 4, h: 2 }, 
+           t1: 66, 
+           tt: { a: 1, b: '2' },
+           aaa: { b: { c: 1 } },         
+           E: { F: 'something something 66 1' },
+           G: '666',
+           H: 'qwertyuiop'
           });
 
           done();

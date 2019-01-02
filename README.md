@@ -2,11 +2,12 @@
 Asynchronous hierarchical config for node.js (env, argv, files, dirs) with inline var substitution and type conversion
 
 ## Quick Start
-`cascade-config` works by loading config objects from different sources and merging them together. 5 types of sources are provided:
+`cascade-config` works by loading config objects from different sources and merging them together. 6 types of sources are provided:
 
-* file: object is loaded using `require`
+* file: object is loaded using `import-fresh`
 * directory: a full hierarchy of files are loaded, reflecting the hierarchy in the loaded object
 * env: object is composed from env vars
+* envfile: object is loaded from a env file, using `dotenv`
 * obj: object is explicitly specified
 * args: object is composed from command line args
 
@@ -207,6 +208,12 @@ In all cases, one can produce deep objects (ie subobjects) by adding `__` to the
 
 * `.file(filename, opts)`: loads object from a file. `filename` supports variable substitution. Options are:
   * `ignore_missing`: if truish, just return an empty object if the file can not be read; if false, raise an error. Defaults to false
+  
+* `.envfile(filename, opts)`: loads object from an envfile. `filename` supports variable substitution. Options are:
+  * `ignore_missing`: if truish, just return an empty object if the file can not be read; if false, raise an error. Defaults to false
+  * `prefix: str`: selects all vars with name starting with `str`, and removes the prefix before adding it to the object
+  * `regexp: regex`: selects all vars whose name matches `regex`
+  
 * `.directory(opts)`: loads a single object composed by an entire file hierarchy. Only js and json files are considered, and the resulting object reflects the relative path of the file. That is, a file `a/b/c.js` containing `{n:1, b:6}` would produce `{a: {b: {c: {n: 1, b: 6}}}}`. Also, dots in file or dir names are changed into `_`. Options are:
   * `files`: base dir to read files from. defaults to `__dirname + '/etc'`, and supports variable substitution
 

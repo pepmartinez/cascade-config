@@ -27,7 +27,8 @@
     "string-interpolation": "1.2.2",
     "minimist": "1.2.0",
     "traverse": "0.6.6",
-    "import-fresh": "3.0.0"
+    "import-fresh": "3.0.0",
+    "dotenv": "6.2.0"
   },
   "devDependencies": {
     "mocha": "5.2.0",

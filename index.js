@@ -7,6 +7,7 @@ var parseArgs =    require ('minimist');
 var Interpolator = require ('string-interpolation');
 var traverse =     require ('traverse');
 var importFresh =  require ('import-fresh');
+var dotenv =       require ('dotenv');
 
 var interpolator = new Interpolator();
 
@@ -145,6 +146,59 @@ function _from_file (fname_tmpl, opts, cfg_so_far, cb) {
   });
 } 
 
+/////////////////////////////////////////////
+// gets data from envfile 
+function _from_envfile (fname_tmpl, opts, cfg_so_far, cb) {
+  var vals = {
+    env: process.env.NODE_ENV || 'development'
+  };
+  
+  _.merge (vals, cfg_so_far);
+
+  var fname = interpolator.parse (fname_tmpl, vals);
+
+// check existence
+  fs.access (fname, function (err) {
+    if (err) {
+      if (opts.ignore_missing) {
+        return cb (null, {});
+      }
+      else {
+        return cb (err);
+      }
+    }
+
+    try {
+      var readf = fs.readFileSync (fname);
+      var envConfig = dotenv.parse (readf);
+      var ka = [];
+      var va = [];
+  
+      if (!opts) opts = {};
+  
+      _.forEach (envConfig, function (v, k) {
+        if (opts.regexp && !(k.match (opts.regexp))) return;
+        if (opts.prefix && !(_.startsWith (k, opts.prefix))) return;
+        if (opts.prefix) k = k.substr (opts.prefix.length);
+        
+        // change __ into . in k
+        k = k.replace (/__/g, '.');
+    
+        ka.push (k);
+        va.push (v);
+      });
+    
+      var obj = _.zipObjectDeep (ka, va);
+
+      // expand variables in loaded object
+      _expand (obj, vals, cb);
+  
+    } catch (e) {
+      return cb (e);
+    }
+  });
+}
+
 
 //////////////////////////////////////////////////////
 // recursively get files in dir hierarchy, reflects hierarchy
@@ -260,6 +314,22 @@ CascadeConfig.prototype.file = function (fname, opts) {
 
   this._tasks.push (function (cb) {
     _from_file (fname, opts || {}, self._cfg, function (err, res) {
+      if (err) return cb (err);
+      self._merge (res);
+      return cb ();
+    });
+  });
+
+  return this;
+}
+
+
+//////////////////////////////////////////////
+CascadeConfig.prototype.envfile = function (fname, opts) {
+  var self = this;
+
+  this._tasks.push (function (cb) {
+    _from_envfile (fname, opts || {}, self._cfg, function (err, res) {
       if (err) return cb (err);
       self._merge (res);
       return cb ();
