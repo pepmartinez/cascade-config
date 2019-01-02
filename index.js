@@ -6,6 +6,7 @@ var async =        require ('async');
 var parseArgs =    require ('minimist');
 var Interpolator = require ('string-interpolation');
 var traverse =     require ('traverse');
+var importFresh =  require ('import-fresh');
 
 var interpolator = new Interpolator();
 
@@ -133,7 +134,7 @@ function _from_file (fname_tmpl, opts, cfg_so_far, cb) {
     var obj = {};
   
     try {
-      obj = require (fname);
+      obj = importFresh (fname);
     } 
     catch (e) {
       return cb (e);
@@ -169,7 +170,7 @@ function _from_dir (opts, cfg_so_far, cb) {
         .replace (/\//g, '.');
 
       var item_cfg = {};
-      _.set (item_cfg, pat, require (item.path));
+      _.set (item_cfg, pat, importFresh (item.path));
       _.merge (cfg, item_cfg);
     }
   })

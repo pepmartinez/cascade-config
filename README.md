@@ -239,4 +239,5 @@ __*Note*__: the object returned by `config()` is mutable, but the object referen
 
 ## External loaders
 There are external packages that add loaders to `cascade-config`, thus allowing to read config from other type of sources:
-* [cascade-config-mongodb](https://www.npmjs.com/package/cascade-config-mongodb) cascade-config-mongodb: reads config from mongodb databases
+* [cascade-config-mongodb](https://www.npmjs.com/package/cascade-config-mongodb) : reads config from mongodb databases
+* [cascade-config-http](https://www.npmjs.com/package/cascade-config-http) : reads config from http URLs (with JSON payloads)
