@@ -16,7 +16,7 @@ function isCfg (item){
   return ext === '.js' || ext === '.json';
 }
 
- 
+
 var _type_convs = {
   '#int': parseInt,
   '#float': parseFloat,
@@ -28,7 +28,7 @@ function _type_conversion (str) {
   var idx = str.indexOf (':');
 
   if (idx == -1) return str;
-  
+
   var sel = str.substr(0, idx);
   var val = str.substr(idx + 1);
   var conv = _type_convs[sel];
@@ -47,7 +47,7 @@ function _expand (obj, cfg_so_far, cb) {
       if (nx != x) this.update (nx);
     }
   });
-  
+
   cb (null, obj);
 }
 
@@ -56,17 +56,17 @@ function _expand (obj, cfg_so_far, cb) {
 // gets data from a plain object
 function _from_obj (obj, cfg_so_far, cb) {
   _expand (obj, cfg_so_far, cb);
-} 
+}
 
 
 /////////////////////////////////////////////
 // gets data from command line arguments
 function _from_args (opts, cfg_so_far, cb) {
-  var args = parseArgs (opts.input || (process.argv.slice(2))); 
+  var args = parseArgs (opts.input || (process.argv.slice(2)));
   var ka = [];
   var va = [];
 
-  _.forEach (args, function (v, k) {
+  _.forEach (args, (v, k) => {
     if (k == '_') return;
 
     // change __ into . in k
@@ -83,7 +83,7 @@ function _from_args (opts, cfg_so_far, cb) {
 
   var obj = _.zipObjectDeep(ka, va);
   _expand (obj, cfg_so_far, cb);
-} 
+}
 
 
 /////////////////////////////////////////////
@@ -92,7 +92,7 @@ function _from_env (opts, cfg_so_far, cb) {
   var ka = [];
   var va = [];
 
-  _.forEach (process.env, function (v, k) {
+  _.forEach (process.env, (v, k) => {
     if (opts.regexp && !(k.match (opts.regexp))) return;
     if (opts.prefix && !(_.startsWith (k, opts.prefix))) return;
 
@@ -118,11 +118,11 @@ function _from_file (fname_tmpl, opts, cfg_so_far, cb) {
   };
 
   _.merge (vals, cfg_so_far);
-  
+
   var fname = interpolator.parse (fname_tmpl, vals);
 
   // check existence
-  fs.access (fname, function (err) {
+  fs.access (fname, err => {
     if (err) {
       if (opts.ignore_missing) {
         return cb (null, {});
@@ -133,10 +133,10 @@ function _from_file (fname_tmpl, opts, cfg_so_far, cb) {
     }
 
     var obj = {};
-  
+
     try {
       obj = importFresh (fname);
-    } 
+    }
     catch (e) {
       return cb (e);
     }
@@ -144,21 +144,21 @@ function _from_file (fname_tmpl, opts, cfg_so_far, cb) {
     // expand variables in loaded object
     _expand (obj, vals, cb);
   });
-} 
+}
 
 /////////////////////////////////////////////
-// gets data from envfile 
+// gets data from envfile
 function _from_envfile (fname_tmpl, opts, cfg_so_far, cb) {
   var vals = {
     env: process.env.NODE_ENV || 'development'
   };
-  
+
   _.merge (vals, cfg_so_far);
 
   var fname = interpolator.parse (fname_tmpl, vals);
 
 // check existence
-  fs.access (fname, function (err) {
+  fs.access (fname, err => {
     if (err) {
       if (opts.ignore_missing) {
         return cb (null, {});
@@ -173,26 +173,26 @@ function _from_envfile (fname_tmpl, opts, cfg_so_far, cb) {
       var envConfig = dotenv.parse (readf);
       var ka = [];
       var va = [];
-  
+
       if (!opts) opts = {};
-  
-      _.forEach (envConfig, function (v, k) {
+
+      _.forEach (envConfig, (v, k) => {
         if (opts.regexp && !(k.match (opts.regexp))) return;
         if (opts.prefix && !(_.startsWith (k, opts.prefix))) return;
         if (opts.prefix) k = k.substr (opts.prefix.length);
-        
+
         // change __ into . in k
         k = k.replace (/__/g, '.');
-    
+
         ka.push (k);
         va.push (v);
       });
-    
+
       var obj = _.zipObjectDeep (ka, va);
 
       // expand variables in loaded object
       _expand (obj, vals, cb);
-  
+
     } catch (e) {
       return cb (e);
     }
@@ -202,20 +202,20 @@ function _from_envfile (fname_tmpl, opts, cfg_so_far, cb) {
 
 //////////////////////////////////////////////////////
 // recursively get files in dir hierarchy, reflects hierarchy
-function _from_dir (opts, cfg_so_far, cb) { 
+function _from_dir (opts, cfg_so_far, cb) {
   var cfg = {};
   var file_root_dir_tmpl = (opts && opts.files) || __dirname + '/etc';
-  
+
   var vals = {
     env: process.env.NODE_ENV || 'development'
   };
 
   _.merge (vals, cfg_so_far);
-  
+
   var file_root_dir = interpolator.parse (file_root_dir_tmpl, vals);
 
   klaw (file_root_dir, {})
-  .on('data', function(item){
+  .on('data', item => {
     if (item.stats.isFile() && isCfg (item.path)) {
       var pat = item.path
         .substr (file_root_dir.length + 1)
@@ -228,7 +228,7 @@ function _from_dir (opts, cfg_so_far, cb) {
       _.merge (cfg, item_cfg);
     }
   })
-  .on ('error', function (err) {
+  .on ('error', err => {
     if ((err.code === 'ENOENT') && (err.path === file_root_dir)) {
       // ignore
 
@@ -240,7 +240,7 @@ function _from_dir (opts, cfg_so_far, cb) {
       return cb (err);
     }
   })
-  .on('end', function () {
+  .on('end', () => {
     // expand variables in loaded object
     _expand (cfg, vals, cb);
   });
@@ -262,15 +262,11 @@ CascadeConfig.prototype._merge = function (obj) {
 
 //////////////////////////////////////////////
 CascadeConfig.prototype.obj = function (oo) {
-  var self = this;
-
-  this._tasks.push (function (cb) {
-    _from_obj (oo, self._cfg, function (err, res) {
-      if (err) return cb (err);
-      self._merge (res);
-      return cb ();
-    });
-  });
+  this._tasks.push (cb => _from_obj (oo, this._cfg, (err, res) => {
+    if (err) return cb (err);
+    this._merge (res);
+    return cb ();
+  }));
 
   return this;
 }
@@ -278,15 +274,11 @@ CascadeConfig.prototype.obj = function (oo) {
 
 //////////////////////////////////////////////
 CascadeConfig.prototype.args = function (opts) {
-  var self = this;
-
-  this._tasks.push (function (cb) {
-    _from_args (opts || {}, self._cfg, function (err, res) {
-      if (err) return cb (err);
-      self._merge (res);
-      return cb ();
-    });
-  });
+  this._tasks.push (cb => _from_args (opts || {}, this._cfg, (err, res) => {
+    if (err) return cb (err);
+    this._merge (res);
+    return cb ();
+  }));
 
   return this;
 }
@@ -294,15 +286,11 @@ CascadeConfig.prototype.args = function (opts) {
 
 //////////////////////////////////////////////
 CascadeConfig.prototype.env = function (opts) {
-  var self = this;
-
-  this._tasks.push (function (cb) {
-    _from_env (opts || {}, self._cfg, function (err, res) {
-      if (err) return cb (err);
-      self._merge (res);
-      return cb ();
-    });
-  });
+  this._tasks.push (cb => _from_env (opts || {}, this._cfg, (err, res) => {
+    if (err) return cb (err);
+    this._merge (res);
+    return cb ();
+  }));
 
   return this;
 }
@@ -310,15 +298,11 @@ CascadeConfig.prototype.env = function (opts) {
 
 //////////////////////////////////////////////
 CascadeConfig.prototype.file = function (fname, opts) {
-  var self = this;
-
-  this._tasks.push (function (cb) {
-    _from_file (fname, opts || {}, self._cfg, function (err, res) {
-      if (err) return cb (err);
-      self._merge (res);
-      return cb ();
-    });
-  });
+  this._tasks.push (cb => _from_file (fname, opts || {}, this._cfg, (err, res) => {
+    if (err) return cb (err);
+    this._merge (res);
+    return cb ();
+  }));
 
   return this;
 }
@@ -326,15 +310,11 @@ CascadeConfig.prototype.file = function (fname, opts) {
 
 //////////////////////////////////////////////
 CascadeConfig.prototype.envfile = function (fname, opts) {
-  var self = this;
-
-  this._tasks.push (function (cb) {
-    _from_envfile (fname, opts || {}, self._cfg, function (err, res) {
-      if (err) return cb (err);
-      self._merge (res);
-      return cb ();
-    });
-  });
+  this._tasks.push (cb => _from_envfile (fname, opts || {}, this._cfg, (err, res) => {
+     if (err) return cb (err);
+     this._merge (res);
+     return cb ();
+  }));
 
   return this;
 }
@@ -342,15 +322,11 @@ CascadeConfig.prototype.envfile = function (fname, opts) {
 
 //////////////////////////////////////////////
 CascadeConfig.prototype.directory = function (opts) {
-  var self = this;
-
-  this._tasks.push (function (cb) {
-    _from_dir (opts, self._cfg, function (err, res) {
-      if (err) return cb (err);
-      self._merge (res);
-      return cb ();
-    });
-  });
+  this._tasks.push (cb => _from_dir (opts, this._cfg, (err, res) => {
+    if (err) return cb (err);
+    this._merge (res);
+    return cb ();
+  }));
 
   return this;
 }
@@ -358,15 +334,11 @@ CascadeConfig.prototype.directory = function (opts) {
 
 //////////////////////////////////////////////
 CascadeConfig.prototype._resolve = function (cb) {
-  var self = this;
+  Object.keys(this._cfg).forEach(key => delete this._cfg[key]);
 
-  Object.keys(this._cfg).forEach(function(key) {
-    delete self._cfg[key]; 
-  });
-
-  async.series (this._tasks, function (err) {
+  async.series (this._tasks, err => {
     if (err) return cb (err);
-    return cb (null, self._cfg);
+    return cb (null, this._cfg);
   })
 }
 
@@ -399,11 +371,10 @@ Config.prototype.unset = function (k) {
 }
 
 Config.prototype.reload = function (cb) {
-  var self = this; 
-  this._cc._resolve (function (err, cfg) {
+  this._cc._resolve ((err, cfg) => {
     if (err) return cb (err);
-    self._change ();
-    cb (null, self);
+    this._change ();
+    cb (null, this);
   });
 }
 
@@ -412,9 +383,7 @@ Config.prototype.onChange = function (cb, opts) {
 }
 
 Config.prototype._change = function (path) {
-  _.forEach (this._change_listeners, function (l) {
-    l (path);
-  });
+  _.forEach (this._change_listeners, l => l (path));
 }
 
 
