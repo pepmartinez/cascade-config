@@ -20,9 +20,9 @@ describe('cascade-config test', function () {
         })
     });
 
-    it('does read and merge objects, args, env, files and envfiles ok', function (done) {
+    it('does read and merge objects, args, env, files, yaml and envfiles ok', function (done) {
       var mconf = new CC();
-      
+
       process.env ['elmer.zzz[0].cc'] = 'ttt';
       process.env ['elmer.zzz[1]__cc'] = 'ggg';
 
@@ -38,6 +38,7 @@ describe('cascade-config test', function () {
         .args ()
         .args ({prefix: 'b.bb.'})
         .obj  ({ b: { d: 'qwerty' } })
+        .yaml (__dirname + '/etc/sample.yaml')
         .done(function (err, cfg) {
           cfg.should.eql({
             a: 'b',
@@ -51,7 +52,38 @@ describe('cascade-config test', function () {
             ABCD: '666',
             G: 'g',
             H: '66',
-          
+            'bill-to': {
+              city: "East Centerville",
+              state: "KS",
+              street: "123 Tornado Alley\nSuite 16\n",
+            },
+            customer: {
+              family_name: "Gale",
+              first_name: "Dorothy"
+            },
+            date: new Date ('2012-08-06T00:00:00.000Z'),
+            items: [
+              {
+                descrip: "Water Bucket (Filled)",
+                part_no: "A4786",
+                price: 1.47,
+                quantity: 4
+              },
+              {
+                descrip: "High Heeled \"Ruby\" Slippers",
+                part_no: "E1628",
+                price: 133.7,
+                quantity: 1,
+                size: 8
+              }
+            ],
+            receipt: "Oz-Ware Purchase Invoice",
+            'ship-to': {
+              city: "East Centerville",
+              state: "KS",
+              street: "123 Tornado Alley\nSuite 16\n"
+            },
+            specialDelivery: "Follow the Yellow Brick Road to the Emerald City. Pay no attention to the man behind the curtain.\n"
           });
 
           done();
@@ -78,6 +110,16 @@ describe('cascade-config test', function () {
         });
     });
 
+    it('does return empty object on nonexistent yaml if ignore_missing is true', function (done) {
+      var mconf = new CC();
+
+      mconf.yaml('nonexistent', {ignore_missing: true})
+        .done(function (err, cfg) {
+          cfg.should.eql({});
+          done();
+        });
+    });
+
     it('does return error on nonexistent file', function (done) {
       var mconf = new CC();
 
@@ -98,6 +140,16 @@ describe('cascade-config test', function () {
         });
     });
 
+    it('does return error on nonexistent yaml', function (done) {
+      var mconf = new CC();
+
+      mconf.yaml('nonexistent')
+        .done(function (err, cfg) {
+          err.code.should.equal ('ENOENT');
+          done();
+        });
+    });
+
     it('does return error on malformed file', function (done) {
       var mconf = new CC();
 
@@ -109,12 +161,23 @@ describe('cascade-config test', function () {
         })
     });
 
+    it('does return error on malformed yaml', function (done) {
+      var mconf = new CC();
+
+      mconf.yaml(__dirname + '/etc/malformed.yaml', {ignore_missing: true})
+        .done(function (err, cfg) {
+          should (err).not.be.undefined();
+          should (cfg).be.undefined();
+          done();
+        });
+    });
+
     it('does read and merge entire dir ok', function (done) {
       var mconf = new CC();
 
       mconf.directory({ files: __dirname + '/etc/tree' }).done(function (err, cfg) {
         if (err) return done(err);
-        cfg.should.eql({ 
+        cfg.should.eql({
           d1: {
             f1: {
               t1: 667,
@@ -157,16 +220,29 @@ describe('cascade-config test', function () {
         .obj({ a: 'b', b: { c: 1, d: 4 } })
         .file(__dirname + '/etc/{env}/f-{env}.js')
         .envfile (__dirname + '/env/e2')
+        .yaml (__dirname + '/etc/templ-{H}.yaml')
         .done(function (err, cfg) {
           cfg.should.eql({
-           a: 'b', 
-           b: { c: 1, d: 4, h: 2 }, 
-           t1: 66, 
-           tt: { a: 1, b: '2' },
-           aaa: { b: { c: 1 } },         
-           E: { F: 'something something 66 1' },
-           G: '666',
-           H: 'qwertyuiop'
+            a: 'b',
+            b: { c: 1, d: 4, h: 2 },
+            t1: 66,
+            tt: { a: 1, b: '2' },
+            aaa: { b: { c: 1 } },
+            E: { F: 'something something 66 1' },
+            G: '666',
+            H: 'qwertyuiop',
+            customer: {
+              family_name: "Gale",
+              first_name: "Dorothy"
+            },
+            date: new Date ('2012-08-06T00:00:00.000Z'),
+            items: [{
+              descrip: "Water Bucket (Filled) 66 1",
+              part_no: "A4786",
+              price: 1.47,
+              quantity: 2,
+            }],
+            receipt: "Oz-Ware Purchase Invoice"
           });
 
           done();
@@ -179,8 +255,11 @@ describe('cascade-config test', function () {
       mconf
         .file (__dirname + '/etc/types-base.js')
         .file (__dirname + '/etc/types.js')
+        .yaml (__dirname + '/etc/types.yaml')
         .done(function (err, cfg) {
-          cfg.should.eql({ 
+          if (err) return done (err);
+
+          cfg.should.eql({
             p1: 666,
             aa: { a: 1, b: '2', c: true, d: false, e: 66.66 },
             w1: 666,
@@ -194,9 +273,39 @@ describe('cascade-config test', function () {
               g: 'something:ggg:hhh',
               h: NaN,
               i: Buffer.from('JavaScript')
-            } 
+            },
+            "bill-to": {
+              city: "East Centerville",
+              state: "KS",
+              street: "123 Tornado Alley\nSuite 1\n"
+            },
+            "ship-to": {
+              city: "East Centerville",
+              state: "KS",
+              street: "123 Tornado Alley\nSuite 1\n"
+            },
+            yaml_a: 666,
+            yaml_b: {
+              a: 1,
+              b: 2
+            },
+            yaml_c: [
+              {
+                a: true,
+                b: false,
+                c: 66.66
+              },
+              {
+                a: NaN,
+                b: "something:ggg:hhh",
+                c: NaN,
+                d: Buffer.from('JavaScript')
+              }
+            ],
+            yaml_d: "Follow the Yellow Brick Road to the Emerald City. Or 666 Pay no attention to the man behind the curtain.\n"
+
           });
-          
+
           done();
         });
     });
@@ -209,48 +318,48 @@ describe('cascade-config test', function () {
 
       var mconf = new CC();
 
-      mconf 
+      mconf
         .env  ({prefix: 'APP_'})
         .args ()
-        .obj  ({ 
-          b: { 
+        .obj  ({
+          b: {
             a: 'ideal {sub.x} or not',
             b: 'surreal {b.bb.g} always or {a.b.c:666}',
             c: 'be as {b.g.n} on a {b.b.c:666}',
-            d: 'something_{undefined}_fishy' 
-          } 
+            d: 'something_{undefined}_fishy'
+          }
         })
         .obj  ({
           second_stage: {
             aaaa: 'guess what: {b.b} all the time',
             bbbb: 'do [{sab.y}] or [{go_figure:flee}]'
-          } 
+          }
         })
         .file(__dirname + '/etc/templated-{b.bb.g}-{unknown.non:deflt}.js')
         .done(function (err, cfg) {
-          cfg.should.eql ({ 
+          cfg.should.eql ({
             sub: { x: 'ttt' },
             sab: { y: 'ggg' },
             x: 3,
-            b: { 
+            b: {
               bb: { g: 'getty' },
               a: 'ideal ttt or not',
               b: 'surreal getty always or 967',
               c: 'be as  on a 666',
-              d: 'something__fishy' 
+              d: 'something__fishy'
             },
             a: { b: { c: 967 } },
-            second_stage: { 
+            second_stage: {
               aaaa: 'guess what: surreal getty always or 967 all the time',
-              bbbb: 'do [ggg] or [flee]' 
+              bbbb: 'do [ggg] or [flee]'
             },
             zzz: 66,
-            zzzz: { 
-              a: 1, 
-              b: 'it is do [ggg] or [flee] enough' 
-            } 
+            zzzz: {
+              a: 1,
+              b: 'it is do [ggg] or [flee] enough'
+            }
           });
-          
+
           done();
         });
     });
@@ -299,7 +408,7 @@ describe('cascade-config test', function () {
             function (cb) {cb (null, _.cloneDeep (cfg.config ()))},
           ],
           function (err, res) {
-            res.should.eql ([ 
+            res.should.eql ([
               true,
               { a: 'b', b: { c: 1, d: 4 }, t1: 66, tt: { a: 1, b: '2' } },
               true,
@@ -311,7 +420,7 @@ describe('cascade-config test', function () {
               { a: 'b', b: { c: 1, d: 4 }, t1: 66, tt: { a: 1, b: '2' } } ]
             );
 
-            track.should.eql ([ 
+            track.should.eql ([
               'b.e',
   { a: 'b', b: { c: 1, d: 4 }, t1: 66, tt: { a: 1, b: '2' } },
   'b.c',

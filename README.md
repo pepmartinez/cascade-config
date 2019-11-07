@@ -4,12 +4,13 @@ Asynchronous hierarchical config for node.js (env, argv, files, dirs) with inlin
 ## Quick Start
 `cascade-config` works by loading config objects from different sources and merging them together. 6 types of sources are provided:
 
-* file: object is loaded using `import-fresh`
-* directory: a full hierarchy of files are loaded, reflecting the hierarchy in the loaded object
+* JS file: object is loaded using `import-fresh`
+* directory: a full hierarchy of js files are loaded, reflecting the hierarchy in the loaded object
 * env: object is composed from env vars
 * envfile: object is loaded from a env file, using `dotenv`
 * obj: object is explicitly specified
 * args: object is composed from command line args
+* yaml: YAML files, loaded with `js-yaml`
 
 External loaders also exist as separated packages (see below)
 
@@ -36,14 +37,15 @@ cconf
 ```
 
 ## Variable substitution
-CC supports using variables already read when calling certain loaders (file and directory). A very useful example is to use already-loaded config to specify the path of a file to load:
+CC supports using variables already read when calling certain loaders (js file, yaml and directory, for example). A very useful example is to use already-loaded config to specify the path of a file to load:
 
 ```javascript
 cconf
   .obj ({a:{b:'one'}})
   .file (__dirname + '/resources-{a.b}.js')
+  .yaml (__dirname + '/other-resources-{a.b}.yaml')
   .done (function (err, config) {
-    // config will contain what's in ./resources-one.js
+    // config will contain what's in ./resources-one.js and in ./other-resources-one.yaml
   });
 ```
 Variable substitution is made with [string-interpolation](https://www.npmjs.com/package/string-interpolation) so you can use any modifier allowed by it (defaults, transformations...)
@@ -69,7 +71,7 @@ cconf
     // env vars are available to substitute args...
   .args()
     // env vars and args are available to substitute file contents...
-  .file (__dirname + '/etc/config.js') 
+  .file (__dirname + '/etc/config.js')
   .done (function (err, config) {
     /*
     config would be
@@ -111,7 +113,7 @@ let see an example:
 cconf
   .obj ({a: 1, b: '2', c: 'true', d: 'SmF2YVNjcmlwdA==', e: 67.89, f:'123.456'})
   .obj ({
-    p1: '#int:{a}', 
+    p1: '#int:{a}',
     p2: '#int:{b}',
     p3: '#int:{c}',
     p4: '#bool:{c}',
@@ -122,7 +124,7 @@ cconf
   .done (function (err, config) {
     /*
     config would be
-    { 
+    {
       a: 1,
       b: '2',
       c: 'true',
@@ -135,7 +137,7 @@ cconf
       p4: true,
       p5: Buffer [ 74, 97, 118, 97, 83, 99, 114, 105, 112, 116 ],
       p6: 67.89,
-      p7: 123.456 
+      p7: 123.456
     }
     */
   });
@@ -147,16 +149,16 @@ cconf
 * `.env(opts)`: loads and merges an object composed with env vars. `opts` can be passed to control what env vars to pick:
   * `prefix: str`: selects all vars with name starting with `str`, and removes the prefix before adding it to the object
   * `regexp: regex`: selects all vars whose name matches `regex`
-In all cases, one can produce deep objects (ie subobjects) by adding `__` to the var name: it will be treated as a `.` 
+In all cases, one can produce deep objects (ie subobjects) by adding `__` to the var name: it will be treated as a `.`
     ```javascript
     // ENV is: APP_A=qwerty, APP_B__C__D=66, SOME__OTHER__VAR=0, AND__ANOTHER__VAR=8
     cconf
       .env ({prefix: 'APP_'})
       .env ({regexp: /OTHER/})
       .done (function (err, config) {
-        /* config would be 
-        { 
-          A: 'querty', 
+        /* config would be
+        {
+          A: 'querty',
           B: {
             C: {
               D: 66
@@ -206,16 +208,19 @@ In all cases, one can produce deep objects (ie subobjects) by adding `__` to the
   * `prefix: str`: selects all vars with name starting with `str`, and removes the prefix before adding it to the object
   * `regexp: regex`: selects all vars whose name matches `regex`
 
-* `.file(filename, opts)`: loads object from a file. `filename` supports variable substitution. Options are:
+* `.file(filename, opts)`: loads object from a javascript file. `filename` supports variable substitution. Options are:
   * `ignore_missing`: if truish, just return an empty object if the file can not be read; if false, raise an error. Defaults to false
-  
+
 * `.envfile(filename, opts)`: loads object from an envfile. `filename` supports variable substitution. Options are:
   * `ignore_missing`: if truish, just return an empty object if the file can not be read; if false, raise an error. Defaults to false
   * `prefix: str`: selects all vars with name starting with `str`, and removes the prefix before adding it to the object
   * `regexp: regex`: selects all vars whose name matches `regex`
-  
+
 * `.directory(opts)`: loads a single object composed by an entire file hierarchy. Only js and json files are considered, and the resulting object reflects the relative path of the file. That is, a file `a/b/c.js` containing `{n:1, b:6}` would produce `{a: {b: {c: {n: 1, b: 6}}}}`. Also, dots in file or dir names are changed into `_`. Options are:
   * `files`: base dir to read files from. defaults to `__dirname + '/etc'`, and supports variable substitution
+
+* `.yaml(filename, opts)`: loads object from a YAML file. `filename` supports variable substitution. Options are:
+  * `ignore_missing`: if truish, just return an empty object if the file can not be read; if false, raise an error. Defaults to false
 
 ## Extended API
 The api exposed so far provides a simple, plain JS object with all the config; this is usually more than enough, but for more complex use cases -where advanced config management is needed- a more powerful interface is provided
@@ -238,7 +243,7 @@ In this case `config` is no longer a plain object containing the config, but an 
 * `get()`: gets a value or slice from the config. Uses the same interface, and has the same logic than lodash's `_.get(obj, ...)`
 * `set()`: sets a value or slice in the config. Uses the same interface, and has the same logic than lodash's `_.set(obj, ...)`
 * `unset()`: unsets a value or slice in the config. Uses the same interface, and has the same logic than lodash's `_.unset(obj, ...)`
-* `reload (cb)`: rereads all config again, as if you called `done()`. It has, in fact, the same interface 
+* `reload (cb)`: rereads all config again, as if you called `done()`. It has, in fact, the same interface
 * `onChange(fn)`: registers a function to be called every the the config is changed (by calling `set()`, `unset()` or `reload()`). Teh function will be called every time the config is changed, with the following params:
   * `function (path)`: where `path` is the path of the change within the configuration, or null if unknown or affects all the config
 

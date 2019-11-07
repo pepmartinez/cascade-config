@@ -8,6 +8,8 @@ var Interpolator = require ('string-interpolation');
 var traverse =     require ('traverse');
 var importFresh =  require ('import-fresh');
 var dotenv =       require ('dotenv');
+var yaml =         require ('js-yaml');
+
 
 var interpolator = new Interpolator();
 
@@ -247,6 +249,43 @@ function _from_dir (opts, cfg_so_far, cb) {
 }
 
 
+////////////////////////////////////////////////////////
+// gets data from a yaml file
+function _from_yaml_file (fname_tmpl, opts, cfg_so_far, cb) {
+  var vals = {
+    env: process.env.NODE_ENV || 'development'
+  };
+
+  _.merge (vals, cfg_so_far);
+
+  var fname = interpolator.parse (fname_tmpl, vals);
+
+  // check existence
+  fs.access (fname, err => {
+    if (err) {
+      if (opts.ignore_missing) {
+        return cb (null, {});
+      }
+      else {
+        return cb (err);
+      }
+    }
+
+    var obj = {};
+
+    try {
+      obj = yaml.load (fs.readFileSync(fname, 'utf8'), {filename: fname});
+    }
+    catch (e) {
+      return cb (e);
+    }
+
+    // expand variables in loaded object
+    _expand (obj, vals, cb);
+  });
+}
+
+
 //////////////////////////////////////////////
 var CascadeConfig = function () {
   this._tasks = [];
@@ -323,6 +362,18 @@ CascadeConfig.prototype.envfile = function (fname, opts) {
 //////////////////////////////////////////////
 CascadeConfig.prototype.directory = function (opts) {
   this._tasks.push (cb => _from_dir (opts, this._cfg, (err, res) => {
+    if (err) return cb (err);
+    this._merge (res);
+    return cb ();
+  }));
+
+  return this;
+}
+
+
+//////////////////////////////////////////////
+CascadeConfig.prototype.yaml = function (fname, opts) {
+  this._tasks.push (cb => _from_yaml_file (fname, opts || {}, this._cfg, (err, res) => {
     if (err) return cb (err);
     this._merge (res);
     return cb ();
