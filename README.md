@@ -2,7 +2,7 @@
 Asynchronous hierarchical config for node.js (env, argv, files, dirs) with inline var substitution and type conversion
 
 ## Quick Start
-`cascade-config` works by loading config objects from different sources and merging them together. 6 types of sources are provided:
+`cascade-config` works by loading config objects from different sources and merging them together. 7 types of sources are provided:
 
 * JS file: object is loaded using `import-fresh`
 * directory: a full hierarchy of js files are loaded, reflecting the hierarchy in the loaded object
