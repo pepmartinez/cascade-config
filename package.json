@@ -1,7 +1,7 @@
 {
   "name": "cascade-config",
   "description": "hierarchical config for node.js (env, argv, js files, yaml, dirs) with inline var substitution",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "keywords": [
     "configuration",
     "hierarchy"
@@ -21,19 +21,19 @@
   },
   "license": "GPL-3.0",
   "dependencies": {
-    "lodash": "~4.17.14",
-    "async": "~2.6.1",
+    "lodash": "~4.17.19",
+    "async": "~3.2.0",
     "klaw": "~3.0.0",
     "string-interpolation": "1.2.2",
-    "minimist": "~1.2.3",
+    "minimist": "~1.2.5",
     "traverse": "~0.6.6",
-    "import-fresh": "~3.0.0",
-    "dotenv": "~6.2.0",
-    "js-yaml": "~3.13.1"
+    "import-fresh": "~3.2.1",
+    "dotenv": "~8.2.0",
+    "js-yaml": "~3.14.0"
   },
   "devDependencies": {
-    "mocha": "~7.1.1",
-    "should": "~13.2.1"
+    "mocha": "~8.0.1",
+    "should": "~13.2.3"
   },
   "scripts": {
     "test": "mocha --reporter spec --check-leaks --bail test/"
