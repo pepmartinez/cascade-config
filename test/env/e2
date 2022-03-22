@@ -1,5 +1,5 @@
-aaa__b__c=#int:{b.c}
-b__h = #int:{tt.b}
+aaa__b__c="#int:{b.c}"
+b__h = "#int:{tt.b}"
 # some else
 E__F='something something {t1} {tt.a}'
 G=666

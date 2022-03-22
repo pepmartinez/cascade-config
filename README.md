@@ -143,9 +143,16 @@ cconf
   });
 ```
 
+Note that `dotenv` starting with version 15.0.0 treats `#` as start of comment, unless the value is wrapped in double quotes; 
+therefore to use this feature on an envfile you will need to elcose the value in double quotes:
+```sh
+a__b__c="#int:{previous_def_1}"
+d__e = "#int:{previous_def_2}"
+```
+
 ## API
 
-* `.obj(object)`: loads and merges an object, verbatim. USeful to provide defaults (if loaded first) or overrides (if loaded last)
+* `.obj(object)`: loads and merges an object, verbatim. Useful to provide defaults (if loaded first) or overrides (if loaded last)
 * `.env(opts)`: loads and merges an object composed with env vars. `opts` can be passed to control what env vars to pick:
   * `prefix: str`: selects all vars with name starting with `str`, and removes the prefix before adding it to the object
   * `regexp: regex`: selects all vars whose name matches `regex`
