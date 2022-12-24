@@ -10,3 +10,4 @@ items:
       descrip:   Water Bucket (Filled) {t1} {tt.a}
       price:     1.47
       quantity:  "#int:{tt.b}"
+      tpl:       "#str: here is som {{ rr.t[7] }} template"

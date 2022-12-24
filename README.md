@@ -20,10 +20,10 @@ Also, one can specify as many loaders as required, even repeating types (that is
 
 Let us see a quick example
 ```javascript
-var CC = require ('cascade-config');
+const CC = require ('cascade-config');
 
-var cconf = new CC();
-var defaults = {...};
+const cconf = new CC();
+const defaults = {...};
 
 cconf
   .obj (defaults)
@@ -31,7 +31,7 @@ cconf
   .file (__dirname + '/etc/config-{env}.js', {ignore_missing: true})
   .env ({prefix: 'MYAPP_'})
   .args ()
-  .done (function (err, config) {
+  .done ((err, config) => {
     // merged config at 'config' object
   });
 ```
@@ -44,7 +44,7 @@ cconf
   .obj ({a:{b:'one'}})
   .file (__dirname + '/resources-{a.b}.js')
   .yaml (__dirname + '/other-resources-{a.b}.yaml')
-  .done (function (err, config) {
+  .done ((err, config) => {
     // config will contain what's in ./resources-one.js and in ./other-resources-one.yaml
   });
 ```
@@ -55,7 +55,7 @@ Also, variable 'env' is always available, containing `NODE_ENV`. This makes it v
 cconf
   .file (__dirname + '/etc/config.js')
   .file (__dirname + '/etc/config-{env}.js')
-  .done (function (err, config) {
+  .done ((err, config) => {
     // if NODE_ENV=='development', it will load ./etc/config.js and
     // then ./etc/config-development.js
   });
@@ -72,7 +72,7 @@ cconf
   .args()
     // env vars and args are available to substitute file contents...
   .file (__dirname + '/etc/config.js')
-  .done (function (err, config) {
+  .done ((err, config) => {
     /*
     config would be
     {
@@ -98,7 +98,22 @@ cconf
 ```
 Notice `z.y` is built through 2 substitutions: `some.var` is built using `B.C.D`, and then z.y is built usint `some.var`
 
-This works on *all* source types
+This works on *all* source types: if you want to provide a string verbatim, you can use the `#str:` type conversion, which will also prevent the variable substitution in it:
+
+```javascript
+cconf
+  .obj ({
+    p1: '#str:some mustache {{a}} and other exotics: []%&_-|@',
+  })
+  .done ((err, config) => {
+    /*
+    config would be
+    {
+      p1: 'some mustache {{a}} and other exotics: []%&_-|@'
+    }
+    */
+  });
+```
 
 ## Type conversion
 Since variable substitution works only for string values, it is useful to have some sort of type conversion mechanism to convert string values into other types. cascade-config does this by looking whether the string begins with a specific prefix:
@@ -109,7 +124,6 @@ Since variable substitution works only for string values, it is useful to have s
 
 let see an example:
 ```javascript
-
 cconf
   .obj ({a: 1, b: '2', c: 'true', d: 'SmF2YVNjcmlwdA==', e: 67.89, f:'123.456'})
   .obj ({
@@ -121,7 +135,7 @@ cconf
     p6: '#float:{e}',
     p7: '#float:{f}'
   })
-  .done (function (err, config) {
+  .done ((err, config) => {
     /*
     config would be
     {
@@ -162,7 +176,7 @@ In all cases, one can produce deep objects (ie subobjects) by adding `__` to the
     cconf
       .env ({prefix: 'APP_'})
       .env ({regexp: /OTHER/})
-      .done (function (err, config) {
+      .done ((err, config) => {
         /* config would be
         {
           A: 'querty',
@@ -183,7 +197,7 @@ In all cases, one can produce deep objects (ie subobjects) by adding `__` to the
 * `.args(opts)`:  loads and merges an object composed with the command line args passed (parsed by `minimist`). As in the case of `env()` all occurrences of `__` are converted to `.`, so one can use either to specify hierarchy
   ```javascript
   // cl is node index.js -a 66 --some.var=rt --some__other__var=qwerty
-  cconf.args().done (function (err, config) {
+  cconf.args().done ((err, config) => {
     /*
     config would be
     {
@@ -198,7 +212,7 @@ In all cases, one can produce deep objects (ie subobjects) by adding `__` to the
     */
   });
 
-  cconf.args({prefix: 'some.'}).done (function (err, config) {
+  cconf.args({prefix: 'some.'}).done ((err, config) => {
     /*
     config would be
     {
@@ -238,7 +252,7 @@ This extender interface is selected by simply passing `{extended: true}` as seco
   cconf
     .args({prefix: 'some.'})
     ...
-    .done (function (err, config) {
+    .done ((err, config) => {
      ...
     }, {extended: true}
   );

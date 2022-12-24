@@ -4,4 +4,5 @@ b__h = "#int:{tt.b}"
 E__F='something something {t1} {tt.a}'
 G=666
 H=qwertyuiop
+I="#str:{{some.mustache}}"
 

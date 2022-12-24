@@ -40,6 +40,7 @@ describe('cascade-config test', function () {
         .obj  ({ b: { d: 'qwerty' } })
         .yaml (__dirname + '/etc/sample.yaml')
         .done(function (err, cfg) {
+          if (err) return done (err);
           cfg.should.eql({
             a: 'b',
             b: { bb: {g: 'getty'}, c: 1, d: 'qwerty', jj: 66, g_h: 'qwertyuiop'},
@@ -222,6 +223,7 @@ describe('cascade-config test', function () {
         .envfile (__dirname + '/env/e2')
         .yaml (__dirname + '/etc/templ-{H}.yaml')
         .done(function (err, cfg) {
+          if (err) return done (err);
           cfg.should.eql({
             a: 'b',
             b: { c: 1, d: 4, h: 2 },
@@ -231,6 +233,7 @@ describe('cascade-config test', function () {
             E: { F: 'something something 66 1' },
             G: '666',
             H: 'qwertyuiop',
+            I: '{{some.mustache}}',
             customer: {
               family_name: "Gale",
               first_name: "Dorothy"
@@ -241,6 +244,7 @@ describe('cascade-config test', function () {
               part_no: "A4786",
               price: 1.47,
               quantity: 2,
+              tpl: ' here is som {{ rr.t[7] }} template'
             }],
             receipt: "Oz-Ware Purchase Invoice"
           });
@@ -272,7 +276,8 @@ describe('cascade-config test', function () {
               f: NaN,
               g: 'something:ggg:hhh',
               h: NaN,
-              i: Buffer.from('JavaScript')
+              i: Buffer.from('JavaScript'),
+              j:'{{}}{{}}{{}}{}{a}{}::||'
             },
             "bill-to": {
               city: "East Centerville",

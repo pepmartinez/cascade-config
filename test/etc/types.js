@@ -9,6 +9,7 @@ module.exports = {
     f:'#float:g4',
     g:'something:ggg:hhh',
     h:'#int:h',
-    i:'#base64:SmF2YVNjcmlwdA=='
+    i:'#base64:SmF2YVNjcmlwdA==',
+    j:'#str:{{}}{{}}{{}}{}{a}{}::||'
   }
 };

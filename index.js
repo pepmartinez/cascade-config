@@ -1,39 +1,40 @@
-var klaw =         require ('klaw');
-var _ =            require ('lodash');
-var path =         require ('path');
-var fs =           require ('fs');
-var async =        require ('async');
-var parseArgs =    require ('minimist');
-var Interpolator = require ('string-interpolation');
-var traverse =     require ('traverse');
-var importFresh =  require ('import-fresh');
-var dotenv =       require ('dotenv');
-var yaml =         require ('js-yaml');
+const klaw =         require ('klaw');
+const _ =            require ('lodash');
+const path =         require ('path');
+const fs =           require ('fs');
+const async =        require ('async');
+const parseArgs =    require ('minimist');
+const Interpolator = require ('string-interpolation');
+const traverse =     require ('traverse');
+const importFresh =  require ('import-fresh');
+const dotenv =       require ('dotenv');
+const yaml =         require ('js-yaml');
 
 
-var interpolator = new Interpolator();
+const interpolator = new Interpolator();
 
 function isCfg (item){
-  var ext = path.extname (path.basename (item));
+  const ext = path.extname (path.basename (item));
   return ext === '.js' || ext === '.json';
 }
 
 
-var _type_convs = {
+const _type_convs = {
   '#int': parseInt,
   '#float': parseFloat,
   '#bool': function (s) {return s === 'true';},
-  '#base64': function (s) {return Buffer.from(s, 'base64');}
+  '#base64': function (s) {return Buffer.from(s, 'base64');},
+  '#str': function (s) {return s.toString();},
 };
 
 function _type_conversion (str) {
-  var idx = str.indexOf (':');
+  const idx = str.indexOf (':');
 
   if (idx == -1) return str;
 
-  var sel = str.substr(0, idx);
-  var val = str.substr(idx + 1);
-  var conv = _type_convs[sel];
+  const sel = str.substring(0, idx);
+  const val = str.substring(idx + 1);
+  const conv = _type_convs[sel];
   if (!conv) return str;
   return conv(val);
 }
@@ -44,7 +45,10 @@ function _type_conversion (str) {
 // does object substitution
 function _expand (obj, cfg_so_far, cb) {
   traverse(obj).forEach(function (x) {
+    // expand only string values
     if (_.isString (x)) {
+      // but ignore if it starts with "#str:"
+      if (x.startsWith ('#str:')) return _type_conversion (x);
       var nx = _type_conversion (interpolator.parse (x, cfg_so_far));
       if (nx != x) this.update (nx);
     }
@@ -64,9 +68,9 @@ function _from_obj (obj, cfg_so_far, cb) {
 /////////////////////////////////////////////
 // gets data from command line arguments
 function _from_args (opts, cfg_so_far, cb) {
-  var args = parseArgs (opts.input || (process.argv.slice(2)));
-  var ka = [];
-  var va = [];
+  const args = parseArgs (opts.input || (process.argv.slice(2)));
+  const ka = [];
+  const va = [];
 
   _.forEach (args, (v, k) => {
     if (k == '_') return;
@@ -77,13 +81,13 @@ function _from_args (opts, cfg_so_far, cb) {
     if (opts.regexp && !(k.match (opts.regexp))) return;
     if (opts.prefix && !(_.startsWith (k, opts.prefix))) return;
 
-    if (opts.prefix) k = k.substr (opts.prefix.length);
+    if (opts.prefix) k = k.substring (opts.prefix.length);
 
     ka.push (k);
     va.push (v);
   });
 
-  var obj = _.zipObjectDeep(ka, va);
+  const obj = _.zipObjectDeep(ka, va);
   _expand (obj, cfg_so_far, cb);
 }
 
@@ -91,14 +95,14 @@ function _from_args (opts, cfg_so_far, cb) {
 /////////////////////////////////////////////
 // gets data from env
 function _from_env (opts, cfg_so_far, cb) {
-  var ka = [];
-  var va = [];
+  const ka = [];
+  const va = [];
 
   _.forEach (process.env, (v, k) => {
     if (opts.regexp && !(k.match (opts.regexp))) return;
     if (opts.prefix && !(_.startsWith (k, opts.prefix))) return;
 
-    if (opts.prefix) k = k.substr (opts.prefix.length);
+    if (opts.prefix) k = k.substring (opts.prefix.length);
 
     // change __ into . in k
     k = k.replace (/__/g, '.');
@@ -107,7 +111,7 @@ function _from_env (opts, cfg_so_far, cb) {
     va.push (v);
   });
 
-  var obj = _.zipObjectDeep(ka, va);
+  const obj = _.zipObjectDeep(ka, va);
   _expand (obj, cfg_so_far, cb);
 }
 
@@ -115,26 +119,22 @@ function _from_env (opts, cfg_so_far, cb) {
 ////////////////////////////////////////////////////////
 // gets data from a file
 function _from_file (fname_tmpl, opts, cfg_so_far, cb) {
-  var vals = {
+  const vals = {
     env: process.env.NODE_ENV || 'development'
   };
 
   _.merge (vals, cfg_so_far);
 
-  var fname = interpolator.parse (fname_tmpl, vals);
+  const fname = interpolator.parse (fname_tmpl, vals);
 
   // check existence
   fs.access (fname, err => {
     if (err) {
-      if (opts.ignore_missing) {
-        return cb (null, {});
-      }
-      else {
-        return cb (err);
-      }
+      if (opts.ignore_missing) return cb (null, {});
+      else return cb (err);
     }
 
-    var obj = {};
+    let obj = {};
 
     try {
       obj = importFresh (fname);
@@ -151,30 +151,26 @@ function _from_file (fname_tmpl, opts, cfg_so_far, cb) {
 /////////////////////////////////////////////
 // gets data from envfile
 function _from_envfile (fname_tmpl, opts, cfg_so_far, cb) {
-  var vals = {
+  const vals = {
     env: process.env.NODE_ENV || 'development'
   };
 
   _.merge (vals, cfg_so_far);
 
-  var fname = interpolator.parse (fname_tmpl, vals);
+  const fname = interpolator.parse (fname_tmpl, vals);
 
 // check existence
   fs.access (fname, err => {
     if (err) {
-      if (opts.ignore_missing) {
-        return cb (null, {});
-      }
-      else {
-        return cb (err);
-      }
+      if (opts.ignore_missing) return cb (null, {});
+      else return cb (err);
     }
 
     try {
-      var readf = fs.readFileSync (fname);
-      var envConfig = dotenv.parse (readf);
-      var ka = [];
-      var va = [];
+      const readf = fs.readFileSync (fname);
+      const envConfig = dotenv.parse (readf);
+      const ka = [];
+      const va = [];
 
       if (!opts) opts = {};
 
@@ -190,7 +186,7 @@ function _from_envfile (fname_tmpl, opts, cfg_so_far, cb) {
         va.push (v);
       });
 
-      var obj = _.zipObjectDeep (ka, va);
+      const obj = _.zipObjectDeep (ka, va);
 
       // expand variables in loaded object
       _expand (obj, vals, cb);
@@ -205,27 +201,27 @@ function _from_envfile (fname_tmpl, opts, cfg_so_far, cb) {
 //////////////////////////////////////////////////////
 // recursively get files in dir hierarchy, reflects hierarchy
 function _from_dir (opts, cfg_so_far, cb) {
-  var cfg = {};
-  var file_root_dir_tmpl = (opts && opts.files) || __dirname + '/etc';
+  const cfg = {};
+  const file_root_dir_tmpl = (opts && opts.files) || __dirname + '/etc';
 
-  var vals = {
+  const vals = {
     env: process.env.NODE_ENV || 'development'
   };
 
   _.merge (vals, cfg_so_far);
 
-  var file_root_dir = interpolator.parse (file_root_dir_tmpl, vals);
+  const file_root_dir = interpolator.parse (file_root_dir_tmpl, vals);
 
   klaw (file_root_dir, {})
   .on('data', item => {
     if (item.stats.isFile() && isCfg (item.path)) {
-      var pat = item.path
-        .substr (file_root_dir.length + 1)
-        .substr (0, item.path.length - (file_root_dir.length + 1) - (path.extname (item.path).length))
+      const pat = item.path
+        .substring (file_root_dir.length + 1)
+        .substring (0, item.path.length - (file_root_dir.length + 1) - (path.extname (item.path).length))
         .replace (/\./g, '_')
         .replace (/\//g, '.');
 
-      var item_cfg = {};
+      const item_cfg = {};
       _.set (item_cfg, pat, importFresh (item.path));
       _.merge (cfg, item_cfg);
     }
@@ -252,26 +248,22 @@ function _from_dir (opts, cfg_so_far, cb) {
 ////////////////////////////////////////////////////////
 // gets data from a yaml file
 function _from_yaml_file (fname_tmpl, opts, cfg_so_far, cb) {
-  var vals = {
+  const vals = {
     env: process.env.NODE_ENV || 'development'
   };
 
   _.merge (vals, cfg_so_far);
 
-  var fname = interpolator.parse (fname_tmpl, vals);
+  const fname = interpolator.parse (fname_tmpl, vals);
 
   // check existence
   fs.access (fname, err => {
     if (err) {
-      if (opts.ignore_missing) {
-        return cb (null, {});
-      }
-      else {
-        return cb (err);
-      }
+      if (opts.ignore_missing) return cb (null, {});
+      else return cb (err);
     }
 
-    var obj = {};
+    let obj = {};
 
     try {
       obj = yaml.load (fs.readFileSync(fname, 'utf8'), {filename: fname});
@@ -287,7 +279,7 @@ function _from_yaml_file (fname_tmpl, opts, cfg_so_far, cb) {
 
 
 //////////////////////////////////////////////
-var CascadeConfig = function () {
+const CascadeConfig = function () {
   this._tasks = [];
   this._cfg = {};
 }
@@ -395,7 +387,7 @@ CascadeConfig.prototype._resolve = function (cb) {
 
 
 
-var Config = function (cc) {
+const Config = function (cc) {
   this._cc = cc;
   this._change_listeners = [];
 }
@@ -410,13 +402,13 @@ Config.prototype.get = function (k, dflt) {
 }
 
 Config.prototype.set = function (k, v) {
-  var ret = _.set (this._cc._cfg, k, v);
+  const ret = _.set (this._cc._cfg, k, v);
   this._change (k);
   return ret;
 }
 
 Config.prototype.unset = function (k) {
-  var ret = _.unset (this._cc._cfg, k);
+  const ret = _.unset (this._cc._cfg, k);
   if (ret) this._change (k);
   return ret;
 }
@@ -443,7 +435,7 @@ CascadeConfig.prototype.done = function (cb, opts) {
   if (!opts) opts = {};
 
   if (opts.extended) {
-    var c = new Config (this);
+    const c = new Config (this);
     c.reload (cb);
   }
   else {
