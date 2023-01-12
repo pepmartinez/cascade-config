@@ -25,6 +25,7 @@ const _type_convs = {
   '#bool': function (s) {return s === 'true';},
   '#base64': function (s) {return Buffer.from(s, 'base64');},
   '#str': function (s) {return s.toString();},
+  '#csv': function (s) {return s.split(',').map(e => e.trim());}
 };
 
 function _type_conversion (str) {

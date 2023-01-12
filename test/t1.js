@@ -368,6 +368,70 @@ describe('cascade-config test', function () {
           done();
         });
     });
+
+
+    it('converts types ok on env vars, cli and objects', done => {
+      process.env ['APP_env__a'] = '#int:666';
+      process.env ['APP_env__b'] = '#bool:yes';
+      process.env ['APP_env__c'] = '#float:123e-3';
+      process.env ['APP_env__d'] = '#base64:cXdlcnR5dWlvcAo='
+      process.env ['APP_env__e'] = '#csv:123,456,789'
+
+      process.argv = [
+        'node', 
+        'index.js', 
+        '--cli__a=#int:123', 
+        '--cli__b=#bool:true', 
+        '--cli__c=#float:123.456', 
+        '--cli__d=#base64:cXdlcnR5dWlvcAo=',
+        '--cli__e=#csv:qwe,rty,uiop'
+      ];
+
+      const mconf = new CC();
+
+      mconf
+        .env  ({prefix: 'APP_'})
+        .args ()
+        .obj  ({
+          obj: {
+            a: '#int:1234',
+            b: '#bool:true',
+            c: '#float:12.344e-3',
+            d: '#base64:cXdlcnR5dWlvcAo=',
+            e: '#csv: aaa, fff , ggg'
+          }
+        })
+        .done((err, cfg) => {
+          console.log (cfg)
+          
+          cfg.should.match ({
+            env: {
+              a: 666,
+              b: false,
+              c: 0.123,
+              d: Buffer.from ('cXdlcnR5dWlvcAo=', 'base64'),
+              e: [ '123', '456', '789' ]
+            },
+            cli: {
+              a: 123,
+              b: true,
+              c: 123.456,
+              d: Buffer.from ('cXdlcnR5dWlvcAo=', 'base64'),
+              e: [ 'qwe', 'rty', 'uiop' ]          
+            },          
+            obj: {
+              a: 1234,
+              b: true,
+              c: 0.012344,
+              d: Buffer.from ('cXdlcnR5dWlvcAo=', 'base64'),
+              e: [ 'aaa', 'fff', 'ggg' ]
+            }
+          });
+
+          done();
+        });
+    });
+
   });
 
   describe('extended', function () {
