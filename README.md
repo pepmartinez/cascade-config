@@ -116,45 +116,78 @@ cconf
 ```
 
 ## Type conversion
-Since variable substitution works only for string values, it is useful to have some sort of type conversion mechanism to convert string values into other types. cascade-config does this by looking whether the string begins with a specific prefix:
+Since variable substitution works only for string values, it is useful to have some sort of type conversion mechanism to convert string values into other types. `cascade-config` does this by looking whether the string begins with a specific prefix:
 * `'#int:'`  converts the rest of the string into an int (using `parseInt`)
 * `'#float:'`  converts the rest of the string into a float (using `parseFloat`)
 * `'#bool:'`  converts the rest of the string into a boolean (as in `value === 'true'`)
 * `'#base64:'` converts the rest of the string into a `Buffer` by base64-decoding it
+* `'#str:'`: passes the string verbatim without any variable substitution. Useful if the value contains curly braces in its own
+* `'#csv:'`: splits the string by commas, trims each element and returns the resulting array
+* `'#json:'`: converts the string to an object, parsing it as json. If the string is not valid json, returns the original string
 
-let see an example:
+Type conversions can be applied to any string, not just those containing a variable substitution: it just need to be at the beginnign of the string. This is very useful to pass complex (non-string) config via cli or env vars
+
+Let us see an example:
 ```javascript
 cconf
-  .obj ({a: 1, b: '2', c: 'true', d: 'SmF2YVNjcmlwdA==', e: 67.89, f:'123.456'})
-  .obj ({
-    p1: '#int:{a}',
-    p2: '#int:{b}',
-    p3: '#int:{c}',
-    p4: '#bool:{c}',
-    p5: '#base64:{d}',
-    p6: '#float:{e}',
-    p7: '#float:{f}'
-  })
-  .done ((err, config) => {
-    /*
-    config would be
-    {
-      a: 1,
-      b: '2',
-      c: 'true',
-      d: 'SmF2YVNjcmlwdA==',
-      e: 67.89,
-      f: '123.456',
-      p1: 1,
-      p2: 2,
-      p3: NaN,
-      p4: true,
-      p5: Buffer [ 74, 97, 118, 97, 83, 99, 114, 105, 112, 116 ],
-      p6: 67.89,
-      p7: 123.456
-    }
-    */
-  });
+.obj ({a: 1, b: '2', c: 'true', d: 'SmF2YVNjcmlwdA==', e: 67.89, f:'123.456'})
+.obj ({
+  p1: '#int:{a}',
+  p2: '#int:{b}',
+  p3: '#int:{c}',
+  p4: '#bool:{c}',
+  p5: '#base64:{d}',
+  p6: '#float:{e}',
+  p7: '#float:{f}'
+}).
+obj ({
+  verbatim: {
+    a: '#int:1234',
+    b: '#bool:true',
+    c: '#float:12.344e-3',
+    d: '#base64:cXdlcnR5dWlvcAo=',
+    e: '#csv: aaa, fff , ggg',
+    f: '#str:{a} {{f}}',
+    g: '#json:{"aa":5, "bb":"qaz"}'
+  },
+  ill_converts: {
+    a: '#int:aa',
+    b: '#bool:null',
+    c: '#float:____',
+    d: '#json:{"aa":5, "bb:"qaz"}'
+  }
+})
+.done ((err, config) => {
+/*
+config would be
+{
+  a: 1,
+  b: '2',
+  c: 'true',
+  d: 'SmF2YVNjcmlwdA==',
+  e: 67.89,
+  f: '123.456',
+  p1: 1,
+  p2: 2,
+  p3: NaN,
+  p4: true,
+  p5: <Buffer 4a 61 76 61 53 63 72 69 70 74>,
+  p6: 67.89,
+  p7: 123.456,
+  verbatim: {
+    a: 1234,
+    b: true,
+    c: 0.012344,
+    d: <Buffer 71 77 65 72 74 79 75 69 6f 70 0a>,
+    e: [ 'aaa', 'fff', 'ggg' ],
+    f: '{a} {{f}}',
+    g: { aa: 5, bb: 'qaz' }
+  },
+  ill_converts: { a: NaN, b: false, c: NaN, d: '{"aa":5, "bb:"qaz"}' }
+}
+
+*/
+});
 ```
 
 Note that `dotenv` starting with version 15.0.0 treats `#` as start of comment, unless the value is wrapped in double quotes; 
