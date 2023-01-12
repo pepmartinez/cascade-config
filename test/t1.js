@@ -5,8 +5,11 @@ var _ =      require('lodash');
 var should = require('should');
 
 
+/////////////////////////////////////////////////////////////////////////////
 describe('cascade-config test', function () {
+  /////////////////////////////////////////////////////////////////////////////
   describe('plain, nontemplated', function () {
+    /////////////////////////////////////////////////////////////////////////////
     it('does read and merge objects ok', function (done) {
       var mconf = new CC();
 
@@ -20,6 +23,7 @@ describe('cascade-config test', function () {
         })
     });
 
+    /////////////////////////////////////////////////////////////////////////////
     it('does read and merge objects, args, env, files, yaml and envfiles ok', function (done) {
       var mconf = new CC();
 
@@ -91,6 +95,7 @@ describe('cascade-config test', function () {
         })
     });
 
+    /////////////////////////////////////////////////////////////////////////////
     it('does return empty object on nonexistent file (ignore_missing: true)', function (done) {
       var mconf = new CC();
 
@@ -101,6 +106,7 @@ describe('cascade-config test', function () {
         });
     });
 
+    /////////////////////////////////////////////////////////////////////////////
     it('does return empty object on nonexistent envfile if ignore_missing is true', function (done) {
       var mconf = new CC();
 
@@ -111,6 +117,7 @@ describe('cascade-config test', function () {
         });
     });
 
+    /////////////////////////////////////////////////////////////////////////////
     it('does return empty object on nonexistent yaml if ignore_missing is true', function (done) {
       var mconf = new CC();
 
@@ -121,6 +128,7 @@ describe('cascade-config test', function () {
         });
     });
 
+    /////////////////////////////////////////////////////////////////////////////
     it('does return error on nonexistent file', function (done) {
       var mconf = new CC();
 
@@ -131,6 +139,7 @@ describe('cascade-config test', function () {
         });
     });
 
+    /////////////////////////////////////////////////////////////////////////////
     it('does return error on nonexistent envfile', function (done) {
       var mconf = new CC();
 
@@ -141,6 +150,7 @@ describe('cascade-config test', function () {
         });
     });
 
+    /////////////////////////////////////////////////////////////////////////////
     it('does return error on nonexistent yaml', function (done) {
       var mconf = new CC();
 
@@ -151,6 +161,7 @@ describe('cascade-config test', function () {
         });
     });
 
+    /////////////////////////////////////////////////////////////////////////////
     it('does return error on malformed file', function (done) {
       var mconf = new CC();
 
@@ -162,6 +173,7 @@ describe('cascade-config test', function () {
         })
     });
 
+    /////////////////////////////////////////////////////////////////////////////
     it('does return error on malformed yaml', function (done) {
       var mconf = new CC();
 
@@ -173,6 +185,7 @@ describe('cascade-config test', function () {
         });
     });
 
+    /////////////////////////////////////////////////////////////////////////////
     it('does read and merge entire dir ok', function (done) {
       var mconf = new CC();
 
@@ -213,7 +226,9 @@ describe('cascade-config test', function () {
     });
   });
 
+  /////////////////////////////////////////////////////////////////////////////
   describe('templated', function () {
+    /////////////////////////////////////////////////////////////////////////////
     it('merges from templatized files ok', function (done) {
       var mconf = new CC();
 
@@ -253,6 +268,7 @@ describe('cascade-config test', function () {
         });
     });
 
+    /////////////////////////////////////////////////////////////////////////////
     it('converts types after expansion ok', function (done) {
       var mconf = new CC();
 
@@ -315,6 +331,7 @@ describe('cascade-config test', function () {
         });
     });
 
+    /////////////////////////////////////////////////////////////////////////////
     it('process templatized values ok', function (done) {
       process.env ['APP_sub__x'] = 'ttt';
       process.env ['APP_sab__y'] = 'ggg';
@@ -370,12 +387,15 @@ describe('cascade-config test', function () {
     });
 
 
+    /////////////////////////////////////////////////////////////////////////////
     it('converts types ok on env vars, cli and objects', done => {
       process.env ['APP_env__a'] = '#int:666';
       process.env ['APP_env__b'] = '#bool:yes';
       process.env ['APP_env__c'] = '#float:123e-3';
       process.env ['APP_env__d'] = '#base64:cXdlcnR5dWlvcAo='
       process.env ['APP_env__e'] = '#csv:123,456,789'
+      process.env ['APP_env__f'] = '#str:{a}{b}'
+      process.env ['APP_env__g'] = '#json:["a",1,true,{"a":1}]'
 
       process.argv = [
         'node', 
@@ -384,7 +404,9 @@ describe('cascade-config test', function () {
         '--cli__b=#bool:true', 
         '--cli__c=#float:123.456', 
         '--cli__d=#base64:cXdlcnR5dWlvcAo=',
-        '--cli__e=#csv:qwe,rty,uiop'
+        '--cli__e=#csv:qwe,rty,uiop',
+        '--cli__f=#str:{a}{{f}}',
+        '--cli__g=#json:{"a":45, "b":"qwe"}',
       ];
 
       const mconf = new CC();
@@ -398,11 +420,13 @@ describe('cascade-config test', function () {
             b: '#bool:true',
             c: '#float:12.344e-3',
             d: '#base64:cXdlcnR5dWlvcAo=',
-            e: '#csv: aaa, fff , ggg'
+            e: '#csv: aaa, fff , ggg',
+            f: '#str:{a} {{f}}',
+            g: '#json:{"aa":5, "bb":"qaz"}'
           }
         })
         .done((err, cfg) => {
-          console.log (cfg)
+          if (err) return done (err);
           
           cfg.should.match ({
             env: {
@@ -410,21 +434,27 @@ describe('cascade-config test', function () {
               b: false,
               c: 0.123,
               d: Buffer.from ('cXdlcnR5dWlvcAo=', 'base64'),
-              e: [ '123', '456', '789' ]
+              e: [ '123', '456', '789' ],
+              f: '{a}{b}',
+              g: [ 'a', 1, true, {a: 1} ]  
             },
             cli: {
               a: 123,
               b: true,
               c: 123.456,
               d: Buffer.from ('cXdlcnR5dWlvcAo=', 'base64'),
-              e: [ 'qwe', 'rty', 'uiop' ]          
+              e: [ 'qwe', 'rty', 'uiop' ] ,
+              f: '{a}{{f}}'   ,
+              g: { a: 45, b: 'qwe' }                
             },          
             obj: {
               a: 1234,
               b: true,
               c: 0.012344,
               d: Buffer.from ('cXdlcnR5dWlvcAo=', 'base64'),
-              e: [ 'aaa', 'fff', 'ggg' ]
+              e: [ 'aaa', 'fff', 'ggg' ],
+              f: '{a} {{f}}',
+              g: { aa: 5, bb: 'qaz' }         
             }
           });
 
@@ -432,9 +462,38 @@ describe('cascade-config test', function () {
         });
     });
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    it('tolerates errors in type conversions', done => {
+      const mconf = new CC();
+
+      mconf
+      .obj  ({
+        a: '#int:aa',
+        b: '#bool:null',
+        c: '#float:____',
+        d: '#json:{"aa":5, "bb:"qaz"}'
+      })
+      .done((err, cfg) => {
+        if (err) return done (err);
+          
+        cfg.should.match ({
+          a: NaN,
+          b: false,
+          c: NaN,
+          d: '{"aa":5, "bb:"qaz"}'
+        });
+
+        done();
+      });
+    });
+
   });
 
+
+  /////////////////////////////////////////////////////////////////////////////
   describe('extended', function () {
+    /////////////////////////////////////////////////////////////////////////////
     it('loads ok', function (done) {
       var mconf = new CC();
 
@@ -455,6 +514,7 @@ describe('cascade-config test', function () {
     });
 
 
+    /////////////////////////////////////////////////////////////////////////////
     it('changes ok', function (done) {
       var mconf = new CC();
 

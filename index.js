@@ -25,7 +25,8 @@ const _type_convs = {
   '#bool': function (s) {return s === 'true';},
   '#base64': function (s) {return Buffer.from(s, 'base64');},
   '#str': function (s) {return s.toString();},
-  '#csv': function (s) {return s.split(',').map(e => e.trim());}
+  '#csv': function (s) {return s.split(',').map(e => e.trim());},
+  '#json': function (s) {try { return JSON.parse(s) } catch (e) { return s} }
 };
 
 function _type_conversion (str) {
@@ -49,7 +50,8 @@ function _expand (obj, cfg_so_far, cb) {
     // expand only string values
     if (_.isString (x)) {
       // but ignore if it starts with "#str:"
-      if (x.startsWith ('#str:')) return _type_conversion (x);
+      if (x.startsWith ('#str:'))  return _type_conversion (x);
+      if (x.startsWith ('#json:')) return _type_conversion (x);
       var nx = _type_conversion (interpolator.parse (x, cfg_so_far));
       if (nx != x) this.update (nx);
     }
