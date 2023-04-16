@@ -1,7 +1,7 @@
 {
   "name": "cascade-config",
   "description": "hierarchical config for node.js (env, argv, js files, yaml, dirs) with inline var substitution",
-  "version": "1.5.9",
+  "version": "1.6.0",
   "keywords": [
     "configuration",
     "hierarchy"
@@ -19,7 +19,7 @@
     "name": "Jose Luis Martinez Juan",
     "email": "pep.martinez@gmail.com"
   },
-  "license": "GPL-3.0",
+  "license": "MIT",
   "dependencies": {
     "async": "~3.2.4",
     "dotenv": "~16.0.3",
