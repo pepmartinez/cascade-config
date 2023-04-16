@@ -488,6 +488,37 @@ describe('cascade-config test', function () {
       });
     });
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    it('manages arrays in env vars and cli args', done => {
+      process.env ['env__a__b[0]'] = '#int:666';
+      process.argv = [
+        'node', 
+        'index.js', 
+        '--cli__b__b[1]=#int:123',
+      ];
+
+      const mconf = new CC();
+
+      mconf
+      .obj  ({
+        a: 'qwertyuiop'
+      })
+      .env()
+      .args()
+      .done((err, cfg) => {
+        if (err) return done (err);
+          
+        cfg.should.match ({
+          a: 'qwertyuiop',
+          env: { a: { b: [ 666 ] } },
+          cli: { b: { b: [ undefined, 123 ] } }
+        });
+
+        done();
+      });
+    });
+
   });
 
 
