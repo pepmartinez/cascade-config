@@ -14,9 +14,13 @@ Asynchronous hierarchical config for node.js (env, argv, files, dirs) with inlin
 
 External loaders also exist as separated packages (see below)
 
-The objects are loaded in the order their methods are called, so latter calls take precedence (an object loaded later would overwrite what is already loaded, by merge)
+The objects are loaded in the order their methods are called, so latter calls take precedence (an object loaded later
+would overwrite what is already loaded, by merge)
 
-Also, one can specify as many loaders as required, even repeating types (that is, loading from more than one file is perfectly doable)
+Also, one can specify as many loaders as required, even repeating types (that is, loading from more than one file is
+perfectly doable)
+
+Finally, each object can be _mounted_ in a specified path inside the final object, instead of its root
 
 Let us see a quick example
 ```javascript
@@ -199,11 +203,16 @@ d__e = "#int:{previous_def_2}"
 
 ## API
 
-* `.obj(object)`: loads and merges an object, verbatim. Useful to provide defaults (if loaded first) or overrides (if loaded last)
+* `.obj(object, opts)`: loads and merges an object, verbatim. Useful to provide defaults (if loaded first) or overrides (if loaded last)
+  Available options on `opts`:
+  * `mount`: where to merge the loaded object inside the main result. The path uses the same semantics than lodash's `_.set(obj, path, ...)`
+
 * `.env(opts)`: loads and merges an object composed with env vars. `opts` can be passed to control what env vars to pick:
+  * `mount`: where to merge the loaded object inside the main result. The path uses the same semantics than lodash's `_.set(obj, path, ...)`
   * `prefix: str`: selects all vars with name starting with `str`, and removes the prefix before adding it to the object
   * `regexp: regex`: selects all vars whose name matches `regex`
-In all cases, one can produce deep objects (ie subobjects) by adding `__` to the var name: it will be treated as a `.`
+
+  In all cases, one can produce deep objects (ie subobjects) by adding `__` to the var name: it will be treated as a `.`
     ```javascript
     // ENV is: APP_A=qwerty, APP_B__C__D=66, SOME__OTHER__VAR=0, AND__ANOTHER__VAR=8
     cconf
@@ -227,7 +236,8 @@ In all cases, one can produce deep objects (ie subobjects) by adding `__` to the
         */
       });
     ```
-* `.args(opts)`:  loads and merges an object composed with the command line args passed (parsed by `minimist`). As in the case of `env()` all occurrences of `__` are converted to `.`, so one can use either to specify hierarchy
+* `.args(opts)`:  loads and merges an object composed with the command line args passed (parsed by `minimist`).
+  As in the case of `env()` all occurrences of `__` are converted to `.`, so one can use either to specify hierarchy
   ```javascript
   // cl is node index.js -a 66 --some.var=rt --some__other__var=qwerty
   cconf.args().done ((err, config) => {
@@ -258,22 +268,29 @@ In all cases, one can produce deep objects (ie subobjects) by adding `__` to the
   });
   ```
   Allowed options are:
+  * `mount`: where to merge the loaded object inside the main result. The path uses the same semantics than lodash's `_.set(obj, path, ...)`
   * `input`: a string that would be used as source for minimist instead of `process.argv.slice(2)`
   * `prefix: str`: selects all vars with name starting with `str`, and removes the prefix before adding it to the object
   * `regexp: regex`: selects all vars whose name matches `regex`
 
 * `.file(filename, opts)`: loads object from a javascript file. `filename` supports variable substitution. Options are:
+  * `mount`: where to merge the loaded object inside the main result. The path uses the same semantics than lodash's `_.set(obj, path, ...)`
   * `ignore_missing`: if truish, just return an empty object if the file can not be read; if false, raise an error. Defaults to false
 
 * `.envfile(filename, opts)`: loads object from an envfile. `filename` supports variable substitution. Options are:
+  * `mount`: where to merge the loaded object inside the main result. The path uses the same semantics than lodash's `_.set(obj, path, ...)`
   * `ignore_missing`: if truish, just return an empty object if the file can not be read; if false, raise an error. Defaults to false
   * `prefix: str`: selects all vars with name starting with `str`, and removes the prefix before adding it to the object
   * `regexp: regex`: selects all vars whose name matches `regex`
 
-* `.directory(opts)`: loads a single object composed by an entire file hierarchy. Only js and json files are considered, and the resulting object reflects the relative path of the file. That is, a file `a/b/c.js` containing `{n:1, b:6}` would produce `{a: {b: {c: {n: 1, b: 6}}}}`. Also, dots in file or dir names are changed into `_`. Options are:
+* `.directory(opts)`: loads a single object composed by an entire file hierarchy. Only js and json files are considered, and the
+  resulting object reflects the relative path of the file. That is, a file `a/b/c.js` containing `{n:1, b:6}` would produce
+  `{a: {b: {c: {n: 1, b: 6}}}}`. Also, dots in file or dir names are changed into `_`. Options are:
+  * `mount`: where to merge the loaded object inside the main result. The path uses the same semantics than lodash's `_.set(obj, path, ...)`
   * `files`: base dir to read files from. defaults to `__dirname + '/etc'`, and supports variable substitution
 
 * `.yaml(filename, opts)`: loads object from a YAML file. `filename` supports variable substitution. Options are:
+  * `mount`: where to merge the loaded object inside the main result. The path uses the same semantics than lodash's `_.set(obj, path, ...)`
   * `ignore_missing`: if truish, just return an empty object if the file can not be read; if false, raise an error. Defaults to false
 
 ## Extended API
