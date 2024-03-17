@@ -6,25 +6,25 @@ var should = require('should');
 
 
 /////////////////////////////////////////////////////////////////////////////
-describe('cascade-config test', function () {
+describe('cascade-config test', () => {
   /////////////////////////////////////////////////////////////////////////////
-  describe('plain, nontemplated', function () {
+  describe('plain, nontemplated', () => {
     /////////////////////////////////////////////////////////////////////////////
-    it('does read and merge objects ok', function (done) {
+    it('does read and merge objects ok', done => {
       var mconf = new CC();
 
       mconf
         .obj({ a: 'b', b: { c: 1, d: 4 } })
         .obj({ nnn: '666', b: { jj: 66 } })
         .obj({ b: { d: 'qwerty' } })
-        .done(function (err, cfg) {
+        .done((err, cfg) => {
           cfg.should.eql({ a: 'b', b: { c: 1, d: 'qwerty', jj: 66 }, nnn: '666' });
           done();
         })
     });
 
     /////////////////////////////////////////////////////////////////////////////
-    it('does read and merge objects, args, env, files, yaml and envfiles ok', function (done) {
+    it('does read and merge objects, args, env, files, yaml and envfiles ok', done => {
       var mconf = new CC();
 
       process.env ['elmer.zzz[0].cc'] = 'ttt';
@@ -43,7 +43,7 @@ describe('cascade-config test', function () {
         .args ({prefix: 'b.bb.'})
         .obj  ({ b: { d: 'qwerty' } })
         .yaml (__dirname + '/etc/sample.yaml')
-        .done(function (err, cfg) {
+        .done((err, cfg) => {
           if (err) return done (err);
           cfg.should.eql({
             a: 'b',
@@ -96,18 +96,18 @@ describe('cascade-config test', function () {
     });
 
     /////////////////////////////////////////////////////////////////////////////
-    it('does return empty object on nonexistent file (ignore_missing: true)', function (done) {
+    it('does return empty object on nonexistent file (ignore_missing: true)', done => {
       var mconf = new CC();
 
       mconf.file('nonexistent.js', {ignore_missing: true})
-        .done(function (err, cfg) {
+        .done((err, cfg) => {
           cfg.should.eql({});
           done();
         });
     });
 
     /////////////////////////////////////////////////////////////////////////////
-    it('does return empty object on nonexistent envfile if ignore_missing is true', function (done) {
+    it('does return empty object on nonexistent envfile if ignore_missing is true', done => {
       var mconf = new CC();
 
       mconf.envfile('nonexistent', {ignore_missing: true})
@@ -118,55 +118,55 @@ describe('cascade-config test', function () {
     });
 
     /////////////////////////////////////////////////////////////////////////////
-    it('does return empty object on nonexistent yaml if ignore_missing is true', function (done) {
+    it('does return empty object on nonexistent yaml if ignore_missing is true', done => {
       var mconf = new CC();
 
       mconf.yaml('nonexistent', {ignore_missing: true})
-        .done(function (err, cfg) {
+        .done((err, cfg) => {
           cfg.should.eql({});
           done();
         });
     });
 
     /////////////////////////////////////////////////////////////////////////////
-    it('does return error on nonexistent file', function (done) {
+    it('does return error on nonexistent file', done => {
       var mconf = new CC();
 
       mconf.file('nonexistent.js')
-        .done(function (err, cfg) {
+        .done((err, cfg) => {
           err.code.should.equal ('ENOENT');
           done();
         });
     });
 
     /////////////////////////////////////////////////////////////////////////////
-    it('does return error on nonexistent envfile', function (done) {
+    it('does return error on nonexistent envfile', done => {
       var mconf = new CC();
 
       mconf.envfile('nonexistent')
-        .done(function (err, cfg) {
+        .done((err, cfg) => {
           err.code.should.equal ('ENOENT');
           done();
         });
     });
 
     /////////////////////////////////////////////////////////////////////////////
-    it('does return error on nonexistent yaml', function (done) {
+    it('does return error on nonexistent yaml', done => {
       var mconf = new CC();
 
       mconf.yaml('nonexistent')
-        .done(function (err, cfg) {
+        .done((err, cfg) => {
           err.code.should.equal ('ENOENT');
           done();
         });
     });
 
     /////////////////////////////////////////////////////////////////////////////
-    it('does return error on malformed file', function (done) {
+    it('does return error on malformed file', done => {
       var mconf = new CC();
 
       mconf.file(__dirname + '/etc/malformed.js', {ignore_missing: true})
-        .done(function (err, cfg) {
+        .done((err, cfg) => {
           should (err).not.be.undefined();
           should (cfg).be.undefined();
           done();
@@ -174,11 +174,11 @@ describe('cascade-config test', function () {
     });
 
     /////////////////////////////////////////////////////////////////////////////
-    it('does return error on malformed yaml', function (done) {
+    it('does return error on malformed yaml', done => {
       var mconf = new CC();
 
       mconf.yaml(__dirname + '/etc/malformed.yaml', {ignore_missing: true})
-        .done(function (err, cfg) {
+        .done((err, cfg) => {
           should (err).not.be.undefined();
           should (cfg).be.undefined();
           done();
@@ -186,10 +186,10 @@ describe('cascade-config test', function () {
     });
 
     /////////////////////////////////////////////////////////////////////////////
-    it('does read and merge entire dir ok', function (done) {
+    it('does read and merge entire dir ok', done => {
       var mconf = new CC();
 
-      mconf.directory({ files: __dirname + '/etc/tree' }).done(function (err, cfg) {
+      mconf.directory({ files: __dirname + '/etc/tree' }).done((err, cfg) => {
         if (err) return done(err);
         cfg.should.eql({
           d1: {
@@ -227,9 +227,9 @@ describe('cascade-config test', function () {
   });
 
   /////////////////////////////////////////////////////////////////////////////
-  describe('templated', function () {
+  describe('templated', () => {
     /////////////////////////////////////////////////////////////////////////////
-    it('merges from templatized files ok', function (done) {
+    it('merges from templatized files ok', done => {
       var mconf = new CC();
 
       mconf
@@ -237,7 +237,7 @@ describe('cascade-config test', function () {
         .file(__dirname + '/etc/{env}/f-{env}.js')
         .envfile (__dirname + '/env/e2')
         .yaml (__dirname + '/etc/templ-{H}.yaml')
-        .done(function (err, cfg) {
+        .done((err, cfg) => {
           if (err) return done (err);
           cfg.should.eql({
             a: 'b',
@@ -269,14 +269,14 @@ describe('cascade-config test', function () {
     });
 
     /////////////////////////////////////////////////////////////////////////////
-    it('converts types after expansion ok', function (done) {
+    it('converts types after expansion ok', done => {
       var mconf = new CC();
 
       mconf
         .file (__dirname + '/etc/types-base.js')
         .file (__dirname + '/etc/types.js')
         .yaml (__dirname + '/etc/types.yaml')
-        .done(function (err, cfg) {
+        .done((err, cfg) => {
           if (err) return done (err);
 
           cfg.should.eql({
@@ -332,7 +332,7 @@ describe('cascade-config test', function () {
     });
 
     /////////////////////////////////////////////////////////////////////////////
-    it('process templatized values ok', function (done) {
+    it('process templatized values ok', done => {
       process.env ['APP_sub__x'] = 'ttt';
       process.env ['APP_sab__y'] = 'ggg';
 
@@ -358,7 +358,7 @@ describe('cascade-config test', function () {
           }
         })
         .file(__dirname + '/etc/templated-{b.bb.g}-{unknown.non:deflt}.js')
-        .done(function (err, cfg) {
+        .done((err, cfg) => {
           cfg.should.eql ({
             sub: { x: 'ttt' },
             sab: { y: 'ggg' },
@@ -523,15 +523,15 @@ describe('cascade-config test', function () {
 
 
   /////////////////////////////////////////////////////////////////////////////
-  describe('extended', function () {
+  describe('extended', () => {
     /////////////////////////////////////////////////////////////////////////////
-    it('loads ok', function (done) {
+    it('loads ok', done => {
       var mconf = new CC();
 
       mconf
         .obj({ a: 'b', b: { c: 1, d: 4 } })
         .file(__dirname + '/etc/{env}/f-{env}.js')
-        .done(function (err, cfg) {
+        .done((err, cfg) => {
           cfg.config ().should.eql({
             a: 'b', b: { c: 1, d: 4 }, t1: 66, tt: { a: 1, b: '2' }
           });
@@ -546,28 +546,28 @@ describe('cascade-config test', function () {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    it('changes ok', function (done) {
+    it('changes ok', done => {
       var mconf = new CC();
 
       mconf
         .obj({ a: 'b', b: { c: 1, d: 4 } })
         .file(__dirname + '/etc/{env}/f-{env}.js')
-        .done(function (err, cfg) {
+        .done((err, cfg) => {
           var track = [];
-          cfg.onChange (function (path) {track.push (path); track.push(_.cloneDeep (cfg.config ()));});
+          cfg.onChange (path => {track.push (path); track.push(_.cloneDeep (cfg.config ()));});
 
           async.series ([
-            function (cb) {cb (null, cfg.unset ('b.e'))},
-            function (cb) {cb (null, _.cloneDeep (cfg.config ()))},
-            function (cb) {cb (null, cfg.unset ('b.c'))},
-            function (cb) {cb (null, _.cloneDeep (cfg.config ()))},
-            function (cb) {cfg.set ('b.c', 'yyy'); cb ()},
-            function (cb) {cfg.set ('b.e', 'hhh'); cb ()},
-            function (cb) {cb (null, _.cloneDeep (cfg.config ()))},
-            function (cb) {cfg.reload (function (err) {cb (err)})},
-            function (cb) {cb (null, _.cloneDeep (cfg.config ()))},
+            cb => cb (null, cfg.unset ('b.e')),
+            cb => cb (null, _.cloneDeep (cfg.config ())),
+            cb => cb (null, cfg.unset ('b.c')),
+            cb => cb (null, _.cloneDeep (cfg.config ())),
+            cb => {cfg.set ('b.c', 'yyy'); cb ()},
+            cb => {cfg.set ('b.e', 'hhh'); cb ()},
+            cb => cb (null, _.cloneDeep (cfg.config ())),
+            cb => cfg.reload (err => cb (err)),
+            cb => cb (null, _.cloneDeep (cfg.config ())),
           ],
-          function (err, res) {
+          (err, res) => {
             res.should.eql ([
               true,
               { a: 'b', b: { c: 1, d: 4 }, t1: 66, tt: { a: 1, b: '2' } },
