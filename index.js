@@ -289,16 +289,20 @@ const CascadeConfig = function () {
 
 
 //////////////////////////////////////////////
-CascadeConfig.prototype._merge = function (obj) {
-  _.merge (this._cfg, obj);
+CascadeConfig.prototype._merge = function (obj, opts) {
+  const mount = opts && opts.mount;
+  if (!mount) return _.merge (this._cfg, obj);
+
+  // mount result elsewhere
+  _.merge (this._cfg, _.set ({}, mount, obj));
 }
 
 
 //////////////////////////////////////////////
-CascadeConfig.prototype.obj = function (oo) {
+CascadeConfig.prototype.obj = function (oo, opts) {
   this._tasks.push (cb => _from_obj (oo, this._cfg, (err, res) => {
     if (err) return cb (err);
-    this._merge (res);
+    this._merge (res, opts);
     return cb ();
   }));
 
@@ -310,7 +314,7 @@ CascadeConfig.prototype.obj = function (oo) {
 CascadeConfig.prototype.args = function (opts) {
   this._tasks.push (cb => _from_args (opts || {}, this._cfg, (err, res) => {
     if (err) return cb (err);
-    this._merge (res);
+    this._merge (res, opts);
     return cb ();
   }));
 
@@ -322,7 +326,7 @@ CascadeConfig.prototype.args = function (opts) {
 CascadeConfig.prototype.env = function (opts) {
   this._tasks.push (cb => _from_env (opts || {}, this._cfg, (err, res) => {
     if (err) return cb (err);
-    this._merge (res);
+    this._merge (res, opts);
     return cb ();
   }));
 
@@ -334,7 +338,7 @@ CascadeConfig.prototype.env = function (opts) {
 CascadeConfig.prototype.file = function (fname, opts) {
   this._tasks.push (cb => _from_file (fname, opts || {}, this._cfg, (err, res) => {
     if (err) return cb (err);
-    this._merge (res);
+    this._merge (res, opts);
     return cb ();
   }));
 
@@ -346,7 +350,7 @@ CascadeConfig.prototype.file = function (fname, opts) {
 CascadeConfig.prototype.envfile = function (fname, opts) {
   this._tasks.push (cb => _from_envfile (fname, opts || {}, this._cfg, (err, res) => {
      if (err) return cb (err);
-     this._merge (res);
+     this._merge (res, opts);
      return cb ();
   }));
 
@@ -358,7 +362,7 @@ CascadeConfig.prototype.envfile = function (fname, opts) {
 CascadeConfig.prototype.directory = function (opts) {
   this._tasks.push (cb => _from_dir (opts, this._cfg, (err, res) => {
     if (err) return cb (err);
-    this._merge (res);
+    this._merge (res, opts);
     return cb ();
   }));
 
@@ -370,7 +374,7 @@ CascadeConfig.prototype.directory = function (opts) {
 CascadeConfig.prototype.yaml = function (fname, opts) {
   this._tasks.push (cb => _from_yaml_file (fname, opts || {}, this._cfg, (err, res) => {
     if (err) return cb (err);
-    this._merge (res);
+    this._merge (res, opts);
     return cb ();
   }));
 

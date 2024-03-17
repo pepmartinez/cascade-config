@@ -224,6 +224,118 @@ describe('cascade-config test', () => {
         done();
       })
     });
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    it('does mount slices ok', done => {
+      var mconf = new CC();
+
+      process.env ['elmer.from_env[0]__env_tree'] = 'ttt';
+      process.env ['elmer.from_env[1]__other_env_tree'] = 'ggg';
+
+      process.argv = ['node', 'index.js', '-a', '3', '--arg1__arg11__arg111=getty', '--arg2[2]__arg222=967'];
+
+      mconf
+      .obj  ({ rawobj0: 'b', rawobj1: { c: 1, d: 4 } }, {mount: 'mount[0].extra'})
+      .file (__dirname + '/etc/tree/d1/f1.js', {mount: 'mount[0].extra'})
+      .envfile (__dirname + '/env/e1', {mount: 'mount[0].extra'})
+      .env  ({prefix: 'elmer.', mount: 'env'})
+      .args ({mount: 'env'})
+      .yaml (__dirname + '/etc/sample.yaml', {mount: 'mount[0].extra'})
+      .done((err, cfg) => {
+        cfg.should.eql({
+          "mount": [
+            {
+              "extra": {
+                "rawobj0": "b",
+                "rawobj1": {
+                  "c": 1,
+                  "d": 4
+                },
+                "t1": 667,
+                "tt": {
+                  "a": 14,
+                  "b": "25"
+                },
+                "ABCD": "666",
+                "b": {
+                  "g_h": "qwertyuiop"
+                },
+                "G": "g",
+                "H": "66",
+                "receipt": "Oz-Ware Purchase Invoice",
+                "date": new Date("2012-08-06T00:00:00.000Z"),
+                "customer": {
+                  "first_name": "Dorothy",
+                  "family_name": "Gale"
+                },
+                "items": [
+                  {
+                    "part_no": "A4786",
+                    "descrip": "Water Bucket (Filled)",
+                    "price": 1.47,
+                    "quantity": 4
+                  },
+                  {
+                    "part_no": "E1628",
+                    "descrip": "High Heeled \"Ruby\" Slippers",
+                    "size": 8,
+                    "price": 133.7,
+                    "quantity": 1
+                  }
+                ],
+                "bill-to": {
+                  "street": "123 Tornado Alley\nSuite 16\n",
+                  "city": "East Centerville",
+                  "state": "KS"
+                },
+                "ship-to": {
+                  "street": "123 Tornado Alley\nSuite 16\n",
+                  "city": "East Centerville",
+                  "state": "KS"
+                },
+                "specialDelivery": "Follow the Yellow Brick Road to the Emerald City. Pay no attention to the man behind the curtain.\n"
+              }
+            }
+          ],
+          "env": {
+            "zzz": [
+              {
+                "cc": "ttt"
+              },
+              {
+                "cc": "ggg"
+              }
+            ],
+            "from_env": [
+              {
+                "env_tree": "ttt"
+              },
+              {
+                "other_env_tree": "ggg"
+              }
+            ],
+            "a": 3,
+            "arg1": {
+              "arg11": {
+                "arg111": "getty"
+              }
+            },
+            "arg2": [
+              undefined,
+              undefined,
+              {
+                "arg222": 967
+              }
+            ]
+          }
+        });
+
+        done();
+      });
+    });
+
+
   });
 
   /////////////////////////////////////////////////////////////////////////////
