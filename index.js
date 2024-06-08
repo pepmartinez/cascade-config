@@ -28,6 +28,7 @@ const _type_convs = {
   '#csv':    function (s) {return s.split(',').map(e => e.trim());},
   '#json':   function (s) {try { return JSON.parse(s) } catch (e) { return s} },
   '#file':   function (s) {try { return fs.readFileSync(s, 'utf8') } catch (e) { return s} },
+  '#jsfile': function (s) {try { return importFresh(s) } catch (e) { return s} },
 };
 
 function _type_conversion (str) {

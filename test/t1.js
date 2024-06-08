@@ -225,7 +225,6 @@ describe('cascade-config test', () => {
       })
     });
 
-
     /////////////////////////////////////////////////////////////////////////////
     it('does mount slices ok', done => {
       var mconf = new CC();
@@ -334,8 +333,6 @@ describe('cascade-config test', () => {
         done();
       });
     });
-
-
   });
 
   /////////////////////////////////////////////////////////////////////////////
@@ -574,7 +571,6 @@ describe('cascade-config test', () => {
         });
     });
 
-
     /////////////////////////////////////////////////////////////////////////////
     it('tolerates errors in type conversions', done => {
       const mconf = new CC();
@@ -600,7 +596,6 @@ describe('cascade-config test', () => {
       });
     });
 
-
     /////////////////////////////////////////////////////////////////////////////
     it('reads file ok as type conversion', done => {
       const mconf = new CC();
@@ -623,7 +618,6 @@ describe('cascade-config test', () => {
       });
     });
 
-
     /////////////////////////////////////////////////////////////////////////////
     it('leaves as is in error when reading file as type conversion', done => {
       const mconf = new CC();
@@ -638,6 +632,54 @@ describe('cascade-config test', () => {
           
         cfg.should.eql ({
           a: './test/etc/nonexistent.txt',
+          d: {aa:5, bb:"qaz"}
+        });
+
+        done();
+      });
+    });
+
+    /////////////////////////////////////////////////////////////////////////////
+    it('leaves as is in error when reading js file as type conversion', done => {
+      const mconf = new CC();
+
+      mconf
+      .obj  ({
+        a: '#jsfile:./test/etc/malformed.js',
+        d: '#json:{"aa":5, "bb":"qaz"}'
+      })
+      .done((err, cfg) => {
+        if (err) return done (err);
+          
+        cfg.should.eql ({
+          a: './test/etc/malformed.js',
+          d: {aa:5, bb:"qaz"}
+        });
+
+        done();
+      });
+    });
+
+    /////////////////////////////////////////////////////////////////////////////
+    it('reads js file ok as type conversion', done => {
+      const mconf = new CC();
+
+      mconf
+      .obj  ({
+        a: '#jsfile:./test/etc/f1.js',
+        d: '#json:{"aa":5, "bb":"qaz"}'
+      })
+      .done((err, cfg) => {
+        if (err) return done (err);
+          
+        cfg.should.eql ({
+          a: {
+            t1: 66,
+            tt: {
+              a:1,
+              b:'2'
+            }
+          },
           d: {aa:5, bb:"qaz"}
         });
 
