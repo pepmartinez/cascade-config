@@ -121,6 +121,7 @@ cconf
 
 ## Type conversion
 Since variable substitution works only for string values, it is useful to have some sort of type conversion mechanism to convert string values into other types. `cascade-config` does this by looking whether the string begins with a specific prefix:
+
 * `'#int:'`  converts the rest of the string into an int (using `parseInt`)
 * `'#float:'`  converts the rest of the string into a float (using `parseFloat`)
 * `'#bool:'`  converts the rest of the string into a boolean (as in `value === 'true'`)
@@ -199,6 +200,61 @@ therefore to use this feature on an envfile you will need to elcose the value in
 ```sh
 a__b__c="#int:{previous_def_1}"
 d__e = "#int:{previous_def_2}"
+```
+
+## Value loaders
+Similar to the type conversions, which apply transformations to string values, there are similar goodies to provide extra loading capabilities:
+
+* `#file:`: takes the rest of the string, opens it as a file and substitutes the whole value with its contents (also a string)
+* `#jsfile:`: takes the rest of the string, opens it as a js object and substitutes the whole value with its contents (an object)
+* `#yamlfile:`: takes the rest of the string, opens it as a js object and substitutes the whole value with its contents (an object)
+
+In the case of `#jsfile` and `#yamlfile` the loaded object is subject to further variable expansions, type conversions and value loaders
+
+Examples:
+
+Text file `val.txt`:
+```
+this is a test file
+this is a test file
+this is a test file
+```
+```js
+{
+  a: '#file:./val.txt',
+  b: 6
+}
+```
+becomes
+```js
+{
+  a: 'this is a test file
+this is a test file
+this is a test file',
+  b: 6
+}
+```
+
+YAML file `val.yaml`:
+```
+z:
+ - 1
+ - 2
+```
+```js
+{
+  a: '#yamlfile:./val.yaml',
+  b: 6
+}
+```
+becomes
+```js
+{
+  a: {
+    z: [1, 2]
+  }
+  b: 6
+}
 ```
 
 ## API
