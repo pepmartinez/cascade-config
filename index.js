@@ -20,13 +20,14 @@ function isCfg (item){
 
 
 const _type_convs = {
-  '#int': parseInt,
-  '#float': parseFloat,
-  '#bool': function (s) {return s === 'true';},
+  '#int':    parseInt,
+  '#float':  parseFloat,
+  '#bool':   function (s) {return s === 'true';},
   '#base64': function (s) {return Buffer.from(s, 'base64');},
-  '#str': function (s) {return s.toString();},
-  '#csv': function (s) {return s.split(',').map(e => e.trim());},
-  '#json': function (s) {try { return JSON.parse(s) } catch (e) { return s} }
+  '#str':    function (s) {return s.toString();},
+  '#csv':    function (s) {return s.split(',').map(e => e.trim());},
+  '#json':   function (s) {try { return JSON.parse(s) } catch (e) { return s} },
+  '#file':   function (s) {try { return fs.readFileSync(s, 'utf8') } catch (e) { return s} },
 };
 
 function _type_conversion (str) {
