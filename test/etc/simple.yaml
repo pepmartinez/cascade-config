@@ -1,0 +1,8 @@
+aa:
+  - f
+  - g
+bb:
+  a: '#int:1'
+  b: '#str:q gg'
+  z: 'c'
+

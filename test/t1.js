@@ -640,6 +640,33 @@ describe('cascade-config test', () => {
     });
 
     /////////////////////////////////////////////////////////////////////////////
+    it('reads js file ok as type conversion', done => {
+      const mconf = new CC();
+
+      mconf
+      .obj  ({
+        a: '#jsfile:./test/etc/f1.js',
+        d: '#json:{"aa":5, "bb":"qaz"}'
+      })
+      .done((err, cfg) => {
+        if (err) return done (err);
+          
+        cfg.should.eql ({
+          a: {
+            t1: 66,
+            tt: {
+              a:1,
+              b:'2'
+            }
+          },
+          d: {aa:5, bb:"qaz"}
+        });
+
+        done();
+      });
+    });
+
+    /////////////////////////////////////////////////////////////////////////////
     it('leaves as is in error when reading js file as type conversion', done => {
       const mconf = new CC();
 
@@ -660,13 +687,14 @@ describe('cascade-config test', () => {
       });
     });
 
+
     /////////////////////////////////////////////////////////////////////////////
-    it('reads js file ok as type conversion', done => {
+    it('reads yaml file ok as type conversion', done => {
       const mconf = new CC();
 
       mconf
       .obj  ({
-        a: '#jsfile:./test/etc/f1.js',
+        a: '#yamlfile:./test/etc/simple.yaml',
         d: '#json:{"aa":5, "bb":"qaz"}'
       })
       .done((err, cfg) => {
@@ -674,12 +702,34 @@ describe('cascade-config test', () => {
           
         cfg.should.eql ({
           a: {
-            t1: 66,
-            tt: {
-              a:1,
-              b:'2'
+            aa: ['f', 'g'],
+            bb: {
+              a: 1,
+              b: "q gg",
+              z: "c"
             }
           },
+          d: {aa:5, bb:"qaz"}
+        });
+
+        done();
+      });
+    });
+
+    /////////////////////////////////////////////////////////////////////////////
+    it('leaves as is in error when reading yaml file as type conversion', done => {
+      const mconf = new CC();
+
+      mconf
+      .obj  ({
+        a: '#yamlfile:./test/etc/malformed.yaml',
+        d: '#json:{"aa":5, "bb":"qaz"}'
+      })
+      .done((err, cfg) => {
+        if (err) return done (err);
+          
+        cfg.should.eql ({
+          a: './test/etc/malformed.yaml',
           d: {aa:5, bb:"qaz"}
         });
 

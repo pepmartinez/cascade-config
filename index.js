@@ -20,15 +20,16 @@ function isCfg (item){
 
 
 const _type_convs = {
-  '#int':    parseInt,
-  '#float':  parseFloat,
-  '#bool':   function (s) {return s === 'true';},
-  '#base64': function (s) {return Buffer.from(s, 'base64');},
-  '#str':    function (s) {return s.toString();},
-  '#csv':    function (s) {return s.split(',').map(e => e.trim());},
-  '#json':   function (s) {try { return JSON.parse(s) } catch (e) { return s} },
-  '#file':   function (s) {try { return fs.readFileSync(s, 'utf8') } catch (e) { return s} },
-  '#jsfile': function (s) {try { return importFresh(s) } catch (e) { return s} },
+  '#int':      parseInt,
+  '#float':    parseFloat,
+  '#bool':     function (s) {return s === 'true';},
+  '#base64':   function (s) {return Buffer.from(s, 'base64');},
+  '#str':      function (s) {return s.toString();},
+  '#csv':      function (s) {return s.split(',').map(e => e.trim());},
+  '#json':     function (s) {try { return JSON.parse(s) } catch (e) { return s} },
+  '#file':     function (s) {try { return fs.readFileSync(s, 'utf8') } catch (e) { return s} },
+  '#jsfile':   function (s) {try { return importFresh(s) } catch (e) { return s} },
+  '#yamlfile': function (s) {try { return yaml.load (fs.readFileSync(s, 'utf8'), {filename: s}) } catch (e) { return s} },
 };
 
 function _type_conversion (str) {
@@ -48,18 +49,28 @@ function _type_conversion (str) {
 /////////////////////////////////////////////
 // does object substitution
 function _expand (obj, cfg_so_far, cb) {
-  traverse(obj).forEach(function (x) {
+  const new_obj = traverse(obj).map(function (x) {
     // expand only string values
     if (_.isString (x)) {
-      // but ignore if it starts with "#str:"
-      if (x.startsWith ('#str:'))  return _type_conversion (x);
-      if (x.startsWith ('#json:')) return _type_conversion (x);
-      var nx = _type_conversion (interpolator.parse (x, cfg_so_far));
+      let nx = x;
+
+      if (
+        (x.startsWith ('#str:')) ||
+        (x.startsWith ('#json:'))
+      ) {
+        // do not expand vars
+        nx = _type_conversion (x);
+      }
+      else {
+        // expand vars
+        nx = _type_conversion (interpolator.parse (x, cfg_so_far));
+      }
+
       if (nx != x) this.update (nx);
     }
   });
 
-  cb (null, obj);
+  cb (null, new_obj);
 }
 
 
