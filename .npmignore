@@ -1,0 +1,6 @@
+.vscode/
+.nyc_output/
+.github/
+coverage/
+playground/
+test/
